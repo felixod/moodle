@@ -26,6 +26,10 @@
 defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->libdir.'/authlib.php');
+require_once($CFG->dirroot.'/user/lib.php');
+require_once($CFG->libdir.'/adminlib.php');
+require_once($CFG->libdir.'/gdlib.php');
+require_once($CFG->dirroot.'/cohort/locallib.php');
 
 /**
  * Manual authentication plugin.
@@ -43,6 +47,12 @@ class auth_plugin_manual extends auth_plugin_base {
     const COMPONENT_NAME = 'auth_manual';
     const LEGACY_COMPONENT_NAME = 'auth/manual';
 
+    // Felixod 
+    const SOAP_LOGIN    = 'web'; //логин пользователя к базе 1С
+    const SOAP_PASSWORD = '5bi$dlyF'; //пароль пользователя к базе 1С
+    const SOAP_CLIENT   = 'https://1c.samgups.ru/univer/ws/dekanat?wsdl';
+    const SOAP_MOUNTPATH = '/mnt/univer/';
+            
     /**
      * Constructor.
      */
@@ -73,10 +83,46 @@ class auth_plugin_manual extends auth_plugin_base {
      */
     function user_login($username, $password) {
         global $CFG, $DB, $USER;
+        // Проверем, если ли пользователя в базе данных 1С: Университет
+        if (self::get_password_verify($username, $password)){
+            // Нашли пользователя в базе данных 1С: Университет
+            // Ищем пользователя в базе данных Moodle
+            if (!$user = $DB->get_record('user', array('username'=>$username, 'mnethostid'=>$CFG->mnet_localhost_id))) {
+                // Получаем код пользователя по логину и паролю из 1С: Университет
+                $id1c = self::get_idnumber_from_login($username, $password);
+                //error_log('Felixod idnumber: ' . $id1c);
+                if (!empty($id1c)) {
+                    $user = new stdClass();
+                    // Создаем учетную запись с минимальным объемом параметров
+                    $user = create_user_record($username, $password, $this->authtype);
+                    if ($user) {
+                        $updateuser = new stdClass();
+                        $updateuser->id         = $user->id;
+                        $updateuser->email      = strtolower($username.'@stud.samgups.ru');
+                        $updateuser->idnumber   = $id1c;
+                        $updateuser->confirmed  = 1;
+                        $updateuser->country    = 'RU';
+                        $updateuser->lang = $CFG->lang;
+                        // Обновляем данные пользователя информацией из 1С
+                        user_update_user($updateuser, false);
+                        // Получаем информацию из 1С по пользователю
+                        $this->get_1c_personalinfo($updateuser->idnumber, $username);
+                        $this->get_1c_cohort($updateuser->idnumber, $username);
+                        // Запрашиваем смену пароля при следующем входе
+                        if ($this->is_internal()) {
+                            set_user_preference('auth_forcepasswordchange', 1, $user->id);
+                        }
+                    }
+                    return true;
+                }
+            }
+        }
         if (!$user = $DB->get_record('user', array('username'=>$username, 'mnethostid'=>$CFG->mnet_localhost_id))) {
             return false;
         }
+
         if (!validate_internal_user_password($user, $password)) {
+            // Логин и пароль не подошли, уходим!
             return false;
         }
         if ($password === 'changeme') {
@@ -85,7 +131,438 @@ class auth_plugin_manual extends auth_plugin_base {
             // passwords are always specified by users
             set_user_preference('auth_forcepasswordchange', true, $user->id);
         }
+                
+        $user = $DB->get_record('user', array('username'=>$username, 'mnethostid'=>$CFG->mnet_localhost_id));
+        $id1c = $user->idnumber;
+        if (!empty($id1c)) {
+            // Обновляем информацию каждые 2 часа
+            if ($this->get_lastlogin_day($user)) {
+                $this->get_1c_personalinfo($id1c, $username);
+                $this->get_1c_cohort($id1c, $username);
+                // Создаем учетную запись в домене stud.samgups.ru
+                if ($this->get_create_students_in_domain($id1c, ltrim($id1c,'0'), $password, 1)) {
+                    // Если учетная запись была создана успешно в домене,
+                    // обновляем адрес почты на новый (login@stud.samgups.ru)
+                    if ($user->email !== strtolower(ltrim($id1c,'0').'@stud.samgups.ru')) {
+                        $updateuser = new stdClass();
+                        $updateuser->id    = $user->id;
+                        $updateuser->email = strtolower(ltrim($id1c,'0').'@stud.samgups.ru');
+                        user_update_user($updateuser, false);
+			// TODO: Придумать как менять пароль у ППС
+                    }
+                }
+            }
+        }
         return true;
+    }
+
+    /**
+    * Функция устанавливает SOAP соединение с 1С: Университет
+    * 
+    * @return array    Возвращает массив с объектом веб-сервиса.
+    */
+
+    function soap_1c_connector () {
+        // Необходимо отключить кэширование для SOAP. Если этого не сделать, 
+        // функции веб-сервисов будут работать некорректно.    
+        ini_set('soap.wsdl_cache_enabled', 0 );
+        ini_set('soap.wsdl_cache_ttl', 0); 
+        try {
+            $client = new SoapClient(self::SOAP_CLIENT,
+            array(
+                'login' => self::SOAP_LOGIN, //логин пользователя к базе 1С
+                'password' => self::SOAP_PASSWORD, //пароль пользователя к базе 1С
+                'soap_version' => SOAP_1_2, //версия SOAP
+                'cache_wsdl' => WSDL_CACHE_NONE,
+                'trace' => true,
+                'features' => SOAP_USE_XSI_ARRAY_TYPE
+            )
+        );
+        return $client;
+        } catch (Exception $e) {
+            debugging('Выброшено исключение: ',  $e->getMessage(), "\n");
+            return null;
+        }
+    }
+
+    /**
+    * Функция проверяет что пользователь заходит меньше суток назад в ЭИОС
+    *
+    * @param  array   $user массив с параметрами пользователя
+    * @return bool    Возвращает метку на успех операции обновления.
+    */
+    function get_lastlogin_day ($user) {
+        $currentlogin = $user->currentlogin; // Текущий вход
+        $lastlogin = $user->lastlogin; // Последний вход
+        $lastlogin2h = strtotime("+2 hours", $lastlogin); // Время просрочки информации +2 часа
+        // Если время последнего входа больше на два часа, чем текущее возвращаем истину
+        if ($currentlogin > $lastlogin2h) {
+            return true;
+        } else {
+            return false;
+        }    
+    }
+
+    /**
+    * Функция создает учетную запись в домене stud.samgups.ru 
+    * с использованием данных из 1С: Университет
+    *
+    * @param  string  $id1c     Идентификатор 1С
+    * @param  string  $username Имя пользователя
+    * @param  string  $password Пароль
+    * @return bool    Возвращает метку на успех операции обновления.
+    */
+    function get_create_students_in_domain ($id1c, $username, $password, $fcommand) {
+        //Подключаемся к веб-сервисам 1С: Университет
+        $client = self::soap_1c_connector (); 
+        // Если не удалость подключиться к веб-сервису - откючиться!
+        if (is_null($client)) {
+            return false;
+        }
+        //Заполним массив передаваемых параметров
+        $params["id"] = $id1c; 
+        $params["Login"] = $username;
+        $params["Password"] = $password;
+        $params["fCommand"] = $fcommand;
+        
+        //Выполняем операцию
+        //GetCreateStudentsInDomain - это метод веб-сервиса 1С, который описан в конфигурации.
+        $result = $client->GetCreateStudentsInDomain($params); 
+        //Обработаем возвращаемый результат
+        $jsResult = $result->return;
+        $dataResult = json_decode($jsResult);
+        return (bool)$dataResult;
+    }
+
+    /**
+    * Функция проверяет пользователя в базе данных 1С: Университет
+    *
+    * @param  string  $username Имя пользователя
+    * @param  string  $password Пароль
+    * @return bool    Возвращает метку на успех операции обновления.
+    */
+    function get_password_verify ($username, $password) {
+        //Подключаемся к веб-сервисам 1С: Университет
+        $client = self::soap_1c_connector (); 
+        // Если не удалость подключиться к веб-сервису - откючиться!
+        if (is_null($client)) {
+            return false;
+        }
+        //Заполним массив передаваемых параметров 
+        $params["Password"] = sha1($password);
+        $params["Login"] = $username;
+        //Выполняем операцию
+        $result = $client->GetPasswordVerify($params); //GetPasswordVerify - это метод веб-сервиса 1С, который описан в конфигурации.
+        //Обработаем возвращаемый результат
+        $jsResult = $result->return;
+        $dataResult = json_decode($jsResult);
+        return (bool)$dataResult;
+    }
+
+    /**
+    * Функция получает по имени пользователя код 1С: Университет
+    *
+    * @param  string  $username Имя пользователя
+    * @param  string  $password Пароль
+    * @return string  Возвращает код студента (1С: Университет).
+    */
+    function get_idnumber_from_login ($username, $password) {
+        //Подключаемся к веб-сервисам 1С: Университет
+        $client = self::soap_1c_connector ();
+        // Если не удалость подключиться к веб-сервису - откючиться!
+        if (is_null($client)) {
+            return false;
+        }
+        //Заполним массив передаваемых параметров 
+        $params["Password"] = sha1($password);
+        $params["Login"] = $username;
+        //Выполняем операцию
+        $result = $client->GetNumberFromLogin($params); //GetNumberFromLogin - это метод веб-сервиса 1С, который описан в конфигурации.
+        //Обработаем возвращаемый результат
+        $jsResult = $result->return;
+        return $jsResult;
+    }
+
+    /**
+    * Функция обновляет пароль в базе данных 1С: Университет
+    * 
+    * @param  string  $id1c     Идентификатор 1С
+    * @param  string  $username Имя пользователя
+    * @param  string  $password Пароль
+    * @param  string  $email    Адрес электронной почты
+    * @return bool    Возвращает метку на успех операции обновления.
+    */
+    function password_1c_update ($id1c, $username, $password, $email) {
+        //Подключаемся к веб-сервисам 1С: Университет
+        $client = self::soap_1c_connector ();
+        // Если не удалость подключиться к веб-сервису - откючиться!
+        if (is_null($client)) {
+            return null;
+        }
+        //Заполним массив передаваемых параметров 
+        $params["id"] = $id1c;
+        $params["sha1"] = sha1($password);
+        $params["login"] = $username;
+        $params["email"] = $email;
+        //Выполняем операцию
+        $result = $client->MakeLogin($params); //MakeLogin - это метод веб-сервиса 1С, который описан в конфигурации.
+        //Обработаем возвращаемый результат
+        $jsResult = $result->return;
+        $dataResult = json_decode($jsResult);
+        return $dataResult;
+    }
+
+    /**
+    * Функция синхронизирует персональные данные с базой
+    * данных 1С: Университет
+    *
+    * @param  string  $id1c     Идентификатор 1С
+    * @param  string  $username Имя пользователя
+    * @return bool    Возвращает метку на успех операции синхронизации.
+    */
+    function get_1c_personalinfo ($id1c, $username) {
+        global $CFG, $DB, $USER;
+        //Подключаемся к веб-сервисам 1С: Университет
+        $client = self::soap_1c_connector ();
+        // Если не удалость подключиться к веб-сервису - откючиться!
+        if (is_null($client)) {
+            return null;
+        }
+        //Заполним массив передаваемых параметров 
+        $params["personid"] = $id1c;
+        //Выполняем операцию
+        $result = $client->GetPersonInfoById($params); //GetPersonInfoById - это метод веб-сервиса 1С, который описан в конфигурации.
+        //Обработаем возвращаемый результат
+        $jsResult = $result->return;       
+        if (property_exists($jsResult, 'uni8array')) {
+            $uni8array = $jsResult->uni8array; //получим значение параметра uni8array, который был сформирован при ответе веб-сервиса 1С
+            if (!empty($uni8array->p0)) {
+                $updateuser = new stdClass();
+                $user = $DB->get_record('user', array('username' => $username));
+                $updateuser->id          = $user->id;
+                $updateuser->firstname   = $uni8array->p1;
+                $updateuser->lastname    = $uni8array->p0;
+                $updateuser->middlename  = $uni8array->p2;
+
+                // Не загружаем фотографии, 
+                //т.к. их синхронизация теперь выполняется через Azure
+                //self::user_update_picture($user, $uni8array->p3);
+                user_update_user($updateuser, false);
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Загрузка изображений из папки 1с: Университет
+     */
+    public function user_update_picture($user, $originalfile) {
+        global $DB, $USER, $CFG;
+        if (empty($user) or empty($originalfile)) {
+            return false;
+        }
+        $originalfile = str_replace('\\','/',$originalfile);
+        $fullpathfile = self::SOAP_MOUNTPATH . $originalfile;
+        // BMP файлы необходимо конвертировать в JPG перед добавлением в аватар
+        $expansion = strtolower(substr(strrchr($originalfile, '.'), 1));
+        // Создаем временный файл, конвертируем bmp в jpg 
+        if ($expansion == 'bmp') {
+            $imagick = new Imagick();
+            $imagick->readImage($fullpathfile);
+            $imagick->setImageFormat ("jpeg");
+            $tmpFile = tmpfile();
+            // Загружаем в профиль конвертированное изображение
+            $fullpathfile = array_search('uri', @array_flip(stream_get_meta_data($tmpFile)));
+            $imagick->writeImages($fullpathfile, false);
+            //error_log("Отладка конвертирования изображений: " . $fullpathfile, 0); 
+        }
+        if ($newrev = self::my_save_profile_image($user->id, $fullpathfile)) {
+            $DB->set_field('user', 'picture', $newrev, array('id'=>$user->id));
+        }
+        return true;
+    }
+
+    /**
+    * Функция получает информацию от веб-сервиса 1С: Университет
+    * глобальные группы и номера зачеток для портфолио 
+    *
+    * @param  string  $id1c     Идентификатор 1С
+    * @param  string  $username Имя пользователя
+    * @return bool    Возвращает метку на успех операции.
+    */
+    function get_1c_cohort ($id1c, $username) {
+        global $CFG, $DB, $USER;
+        //Подключаемся к веб-сервисам 1С: Университет
+        $client = self::soap_1c_connector ();
+        // Если не удалость подключиться к веб-сервису - откючиться!
+        if (is_null($client)) {
+            return null;
+        }
+        //Заполним массив передаваемых параметров 
+        $params["studid"] = $id1c;
+        $params["status"] = false; // Выводить список всех групп
+        //Выполняем операцию
+        $result = $client->GetAllGroupByStudID($params); //GetAllGroupByStudID - это метод веб-сервиса 1С, который описан в конфигурации.
+        //Обработаем возвращаемый результат
+        $jsResult = $result->return;      
+        if (property_exists($jsResult, 'uni8array')) {
+            $uni8arrays = $jsResult->uni8array; //получим значение параметра uni8array, который был сформирован при ответе веб-сервиса 1С
+            if (is_array($uni8arrays)) {
+                // Если массив, значит групп больше чем одна
+                foreach ($uni8arrays as $uni8array) {
+                    self::check_cohort_member ($uni8array, $username);
+                    // Добавляем в портфолио номер зачетной книги
+                    self::check_sibport_group  ($uni8array, $username);
+                }
+            } else {
+                // Если нет, значит обрабатываем одну группу
+                self::check_cohort_member ($uni8arrays, $username);
+                // Добавляем в портфолио номер зачетной книги
+                self::check_sibport_group  ($uni8arrays, $username);
+            }
+        }
+        return true;
+    }
+    
+    /**
+     * Проверяет, является ли пользователь членом данной гл. группы
+     * Если не является, добавляет в перечень групп
+     *
+     * @param array  $array массив из 1С.
+     * @param string $username имя пользователя.
+     *
+     * @return bool верно, если пользователь член группы
+     */
+    function check_cohort_member ($array, $username) {
+		//p0 = Строка(Состояние);
+		//p1 = Строка(Группа);
+		//p2 = Строка(ЗачетнаяКнига);
+        global $DB;
+        if (!empty($array->p1)) {
+            $cohort = $DB->get_record('cohort', ['idnumber' => $array->p1]);
+            $user = $DB->get_record('user', array('username' => $username));
+            if (!is_object($cohort)) {
+                // Глобальной группы с этим именем нет
+                $cohort->name = $array->p1;
+                $cohort->idnumber = $array->p1;
+                $cohort->contextid = 1;
+                if ($array->p0 =='Является выпускником') {
+                    $cohort->visible = 0;
+                } else {
+                    $cohort->visible = 1;
+                }
+                $cohort->id = cohort_add_cohort($cohort);
+            }
+            if (!cohort_is_member($cohort->id, $user->id)) {
+                // Пользователь не член глобальной группы
+                cohort_add_member($cohort->id, $user->id); 
+            }
+            else {
+                // Пользователь член глобальной группы
+                return true; 
+            }
+        } 
+    }
+
+    /**
+     * Проверяет, является ли пользователь членом группы в
+     * портфолио и если является, обновляет название
+     *
+     * @param array $array массив данных из 1С.
+     * @param string $username имя пользователя.
+     *
+     * @return bool верно, если пользователь член группы
+     */
+    function check_sibport_group ($array, $username) {
+		//p0 = Строка(Состояние);
+		//p1 = Строка(Группа);
+		//p2 = Строка(ЗачетнаяКнига);
+        global $DB;
+        if (!empty($array->p1)) {
+            $cohort = $DB->get_record('cohort', ['idnumber' => $array->p1]);
+            if (is_object($cohort)) {
+                // Глобальной группы с этим именем есть
+                $group_data = $DB->get_record('sibport_group_data', array('groupid' => $cohort->id));
+                if (!is_object($group_data)) {
+                    // Группы портфолио нету
+                    $sibport = new stdClass();
+                    $sibport->groupid = $cohort->id;
+                    $sibport->curatorid = Null;
+                    $sibport->study = $array->p5;
+                    $speciality = $array->p3;
+                    if (!empty($array->p4)) {
+                        $speciality = $speciality . ' "' . $array->p4 . '"';    
+                    } 
+                    $sibport->speciality = $speciality;
+                    $DB->insert_record('sibport_group_data', $sibport);
+                } else {
+                    $sibport = new stdClass();
+                    $sibport->id = $group_data->id;
+                    $sibport->study = $array->p5;
+                    $speciality = $array->p3;
+                    if (!empty($array->p4)) {
+                        $speciality = $speciality . ' "' . $array->p4 . '"';    
+                    } 
+                    $sibport->speciality = $speciality;
+                    // Группа портфолио есть
+                    $DB->update_record('sibport_group_data', $sibport, true);
+                }
+                self::check_sibport_stud ($username, $cohort->id, $array->p2);     
+            }
+        } 
+    }
+
+    /**
+     * Заполняет информацию об номере студенческого
+     * билета в портфолио
+     *
+     * @param string $username имя пользователя.
+     * @param string $cohortid код группы.
+     * @param string $number   номер студенческого билета.
+     *
+     * @return bool верно, если пользователь член группы
+     */
+    function check_sibport_stud ($username, $cohortid, $number) {
+		//p0 = Строка(Состояние);
+		//p1 = Строка(Группа);
+		//p2 = Строка(ЗачетнаяКнига);
+        global $DB;
+        $user = $DB->get_record('user', array('username' => $username));
+        if (is_object($user)) {
+            if (empty($cohortid)) {
+                return false;
+            }
+            $sibport_user = $DB->get_record('sibport_users', array('userid' => $user->id));
+            if (!is_object($sibport_user)) {
+                // Студента в списке нету
+                $sibport = new stdClass();
+                $sibport->groupid = $cohortid;
+                $sibport->userid = $user->id;
+                $sibport->number = $number;
+                $DB->insert_record('sibport_users', $sibport);
+            } else {
+                // Студент в списке есть
+                $sibport = new stdClass();
+                $sibport->id = $sibport_user->id;
+                $sibport->number = $number;
+                $DB->update_record('sibport_users', $sibport, true);
+            }
+        }
+    }
+
+    /**
+     * Try to save the given file (specified by its full path) as the
+     * picture for the user with the given id.
+     *
+     * @param integer $id the internal id of the user to assign the
+     *                picture file to.
+     * @param string $originalfile the full path of the picture file.
+     *
+     * @return mixed new unique revision number or false if not saved
+     */
+    function my_save_profile_image($id, $originalfile) {
+        $context = context_user::instance($id);
+        return process_new_icon($context, 'user', 'icon', 0, $originalfile);
     }
 
     /**
