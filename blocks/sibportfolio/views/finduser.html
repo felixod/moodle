@@ -1,0 +1,26 @@
+<table cellpadding="5" class="generaltable">
+    <thead>
+        <tr>
+            <th>{{ user_label }}</th>
+            <th>{{ group_label }}</th>
+            <th>{{ profile_label }}</th>
+        </tr>
+    </thead>
+    <tbody id='block_sibportfolio_tablebody'>
+        {% for user in users %}
+        <tr>
+            <td>{{ user.name }}</td>
+            <td>
+                {% if user.group %}
+                {{ user.group }}
+                {% elseif user.id %}—{% endif %}
+            </td>
+            <td>
+                {% if user.id %}
+                <a href='{{ wwwroot }}/blocks/sibportfolio/index.php?userid={{ user.id }}'>{{ profile_more_label }}</a>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

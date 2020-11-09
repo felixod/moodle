@@ -1,0 +1,46 @@
+<div class='block_sibportfolio_content'>
+<div style='display: inline-block;'>
+    <h3><i class="fa fa-1x fa-book"></i> {{ header_label }}</h3>
+</div>
+{% if notification_message %}<div class='alert {{ notification_type }}'>{{ notification_message }}</div>{% endif %}
+<hr class='block_sibportfolio_hr' />
+<div class='block_sibportfolio_tablediv'>
+    {% if find %}
+    <table class='generaltable' cellpadding='5'>
+        <thead class='block_sibportfolio_gray'>
+            <tr>
+                <th>{{ category_label }}</th>
+                <th>{{ next_label }}</th>
+            </tr>
+        </thead>
+        <tbody id='block_sibportfolio_tablebody'>
+            {% for category in categories %}
+            <tr>
+                <td>
+                    <form action='{{ wwwroot }}/blocks/sibportfolio/categories.php' method='post'>
+                        <input class='block_sibportfolio_text' type='text' name='category' value='{{ category.name }}' autocomplete='off' size='40' style='margin: 0;' />
+                        <input type='hidden' name='categoryid' value='{{ category.id }}' />
+                        <input type='hidden' name='sesskey' value='{{ sesskey }}' />
+                        <button type='submit' name='editCat' alt='{{ edit_category_label }}' title='{{ edit_category_label }}' value='edit' class='block_sibportfolio_hidebutton' >
+                            <i class="fa fa-lg fa-pencil-square"></i>
+                        </button>
+                    </form>
+                </td>
+                <td><a href='{{ wwwroot }}/blocks/sibportfolio/handlers/forms/delcategory.php?categoryid={{ category.id }}'>{{ del_category_label }}</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class='notification_label'>
+        {{ not_found_label }}
+    </div>
+    {% endif %}
+</div>
+<hr class='block_sibportfolio_hr' />
+<form action='{{ wwwroot }}/blocks/sibportfolio/handlers/post/addcategory.php' method='post'>
+    <input class='block_sibportfolio_button' type='submit' value='{{ add_category_label }}' />
+    <input class='block_sibportfolio_text' type='text' name='category' autocomplete='off' size='40' />
+    <input type='hidden' name='sesskey' value='{{ sesskey }}' />
+</form>
+</div>

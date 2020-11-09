@@ -1,0 +1,164 @@
+﻿{% verbatim %}
+<script id="block_sibportfolio_tmpl1" type="text/x-handlebars-template">
+    {{# each sort_links }}
+    <a href='{{ ../wwwroot }}/blocks/sibportfolio/report.php?sortorder={{ sortorder }}&user={{ ../user_name }}' style='{{ style }}' class='block_sibportfolio_sortlink'>{{ caption }}</a>
+    <span></span>
+    {{/ each }}
+</script>
+
+<script id="block_sibportfolio_tmpl2" type="text/x-handlebars-template">
+    {{# each curators }}
+    <tr class='block_sibportfolio_lightgray' style='{{# if find }}border: 2px solid black;{{/ if }}'>
+        <td><a href='{{ ../wwwroot }}/blocks/sibportfolio/index.php?userid={{ id }}' target='_blank'>{{ name }}</a></td>
+        <td>{{ laccess }}</td>
+        <td><a href='{{ ../wwwroot }}/blocks/sibportfolio/handleclaims.php?userid={{ id }}' target='_blank'>{{ claims }}</a></td>
+        <td><div class='block_sibportfolio_moreinfo block_sibportfolio_showmore' title='{{ ../more_label }}' style='cursor: pointer;'></div></td>
+    </tr>
+    <tr class='block_sibportfolio_blockmore'>
+        <td colspan='4' style='padding: 0;'>
+            <div style='border: 2px solid #ebebeb; border-top: none; margin-bottom: 10px; margin-left: 3px; margin-right: 3px;'>
+                <table class='generaltable' cellpadding='5' style='margin: 0;'>
+                    <thead>
+                        <tr>
+                            <th>{{ ../group_label }}</th>
+                            <th width='25%'>{{ ../count_users_label }}</th>
+                            <th width='25%'>{{ ../percent_label }}</th>
+                            <th width='25%'>{{ ../empty_label }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{# each groups }}
+                        <tr style='{{# ifNotVisible this }}color: #999;{{/ ifNotVisible }}'>
+                            <td>
+                                <a style='{{# ifNotVisible this }}color: #999;{{/ ifNotVisible }}' href='{{ ../../wwwroot }}/blocks/sibportfolio/ureport.php?groupid={{ id }}' target='_blank'>
+                                    {{ name }}
+                                </a>
+                            </td>
+                            <td>{{ count_users }}</td>
+                            <td>{{ percent_filled }}%</td>
+                            <td>{{ count_empty }}</td>
+                        </tr>
+                        {{/ each }}
+                    </tbody>
+                </table>
+            </div>
+        </td>
+    </tr>
+    <tr><td colspan='4' style='padding: 1px;'></td></tr>
+    {{/ each }}
+</script>
+
+<script id="block_sibportfolio_tmpl3" type="text/x-handlebars-template">
+    {{# each pages }}
+    {{# if url }}
+    <form style='float: left;' action='{{ ../../wwwroot }}/blocks/sibportfolio/report.php' method='get'>
+        <input type='hidden' name='page' value='{{ caption }}' />
+        <input type='hidden' name='sortorder' value='{{ ../../sortorder }}' />
+        <input type='hidden' name='user' value='{{ ../../user_name }}' />
+        <input class='block_sibportfolio_pagebtn block_sibportfolio_button' style='{{ style }}' type='submit' value='{{ caption }}'>
+    </form>
+    {{ else }}
+    <button class='block_sibportfolio_button' style='float: left;' type='submit' disabled>..</button>
+    {{/ if }}
+    {{/ each }}
+</script>
+{% endverbatim %}
+
+<script type="text/javascript">
+	var jQuerySibport = jQuery.noConflict(true);
+
+    jQuerySibport(document).ready(function ($) {
+
+	    var more = function () {
+			$(this).parents('tr').next().toggle();
+			$(this).toggleClass('block_sibportfolio_showmore block_sibportfolio_hidemore');
+		}
+	
+		$('.block_sibportfolio_blockmore').hide();
+        $('.block_sibportfolio_moreinfo').on('click', more);
+		
+		var handle = false;
+
+		var click = function (e) {
+			if (!handle) handle = true;
+			else return false;
+
+			e.preventDefault();
+			$("#block_sibportfolio_tablebody").empty();
+			$("#block_sibportfolio_load").show();
+			var target = $(e.target);
+			var url = target[0].tagName == "A" ? target.attr("href") : target.parent("form").attr("action");
+			var reqData = target[0].tagName == "A" ? null : target.parent("form").serialize();
+
+			$.ajax({
+				url: url,
+				timeout: 60000,
+				data: reqData,
+				type: "get",
+				dataType: "json",
+				success: function (data) {
+					$("#block_sibportfolio_sortlinks").empty();
+					$("#block_sibportfolio_tmpl1").template(data).appendTo("#block_sibportfolio_sortlinks");
+					$(".block_sibportfolio_sortlink").on('click', click);
+					if (data.hasOwnProperty('not_found_label')) {
+						$("<div class='notification_label'></div>")
+							.text(data.not_found_label)
+							.wrap("<tr><td colspan='4'></td></tr>")
+							.parent().parent()
+							.appendTo("#block_sibportfolio_tablebody");
+					} else {
+						$("#block_sibportfolio_tmpl2").template(data).appendTo("#block_sibportfolio_tablebody");
+					}
+					$("#block_sibportfolio_pages").empty();
+					$("#block_sibportfolio_tmpl3").template(data).appendTo("#block_sibportfolio_pages");
+					$(".block_sibportfolio_pagebtn").on('click', click);
+					$(".block_sibportfolio_sortorder").attr('value', data.sortorder);
+				},
+				error: function () {
+					$(".block_sibportfolio_tablediv")
+						.text("{{ error_label }}")
+						.css({
+							color: "red",
+							"text-align": "center",
+							"font-size": "14pt",
+							"font-weight": "bold"
+						});
+				},
+				complete: function () {
+					$("#block_sibportfolio_load").hide();
+					$('.block_sibportfolio_blockmore').hide();
+					$('.block_sibportfolio_moreinfo').on('click', more);
+					handle = false;
+				}
+			});
+		}
+
+		var delay = (function () {
+			var timer = 0;
+			return function (callback, ms) {
+				clearTimeout(timer);
+				timer = setTimeout(callback, ms);
+			};
+		})();	
+	
+        $(".block_sibportfolio_btnuser").hide();
+
+        $('.block_sibportfolio_user').keyup(function (e) {
+            delay(function () {
+                click(e)
+            }, 500);
+        });
+        $(".block_sibportfolio_sortlink").on('click', click);
+        $(".block_sibportfolio_pagebtn").on('click', click);
+		$("<div id='block_sibportfolio_load' class='notification_label'><img src='{{ wwwroot }}/blocks/sibportfolio/pix/loading.gif'>  {{ loading_label }}</div>")
+			.appendTo(".block_sibportfolio_tablediv")
+			.hide();
+
+    });
+
+    Handlebars.registerHelper("ifNotVisible", function (value, options) {
+        if (value.visible == false)
+            return options.fn(this);
+        return options.inverse(this);
+    });
+</script>

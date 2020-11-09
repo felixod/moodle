@@ -1,0 +1,121 @@
+{% verbatim %}
+<script id="block_sibportfolio_tmpl1" type="text/x-handlebars-template">
+    {{# each logs }}
+    <tr class='block_sibportfolio_headlink block_sibportfolio_logbase {{ background }}' style='cursor: auto;'>
+        <td>{{ date }}</td>
+        <td>{{ desc }}</td>
+        <td>
+            {{# if bigname }}
+            <span class='block_sibportfolio_helptext' help-attribute='{{{ ../filename }}}'>{{{ ../fileinfo }}}</span>
+            {{ else }}
+            <span>{{{ ../fileinfo }}}</span>
+            {{/ if }}
+        </td>
+        <td><div class='block_sibportfolio_moreinfo block_sibportfolio_showmore' title='{{ ../more_label }}' style='cursor: pointer;'></div></td>
+    </tr>
+    <tr class='block_sibportfolio_logmore' style='display: none;'>
+        <td class='block_sibportfolio_logdata'>{{ ../type_label }}</td>
+        <td colspan='3'><img height='20' width='20' src='{{ ../wwwroot }}/blocks/sibportfolio/pix/{{ icon }}.png'> {{ type }}</td>
+    </tr>
+    <tr class='block_sibportfolio_logmore' style='display: none;'>
+        <td class='block_sibportfolio_logdata'>{{ ../status_label }}</td>
+        <td colspan='3'><img src='{{ ../wwwroot }}/blocks/sibportfolio/pix/{{ statusicon }}.png'> {{ status }}</td>
+    </tr>
+    <tr class='block_sibportfolio_logmore' style='display: none;'>
+        <td class='block_sibportfolio_logdata'>{{ ../curator_label }}</td>
+        <td colspan='3'>{{ curator }}</td>
+    </tr>
+    <tr class='block_sibportfolio_logmore' style='display: none;'>
+        <td class='block_sibportfolio_logdata'>{{ ../usercomment_label }}</td>
+        <td colspan='3'>{{ usercomment }}</td>
+    </tr>
+    <tr class='block_sibportfolio_logmore' style='display: none;'>
+        <td class='block_sibportfolio_logdata'>{{ ../comment_label }}</td>
+        <td colspan='3'>{{ comment }}</td>
+    </tr>
+    <tr>
+        <td colspan='4'><div style='border-bottom: 2px solid silver'></div></td>
+    </tr>
+    {{/ each }}
+</script>
+
+<script id="block_sibportfolio_tmpl2" type="text/x-handlebars-template">
+    {{# each pages }}
+    {{# if url }}
+    <form style='float: left;' action='{{ ../../wwwroot }}/blocks/sibportfolio/logclaims.php' method='get'>
+        <input type='hidden' name='userid' value='{{ ../../user_id }}' />
+        <input type='hidden' name='page' value='{{ caption }}' />
+        <input class='block_sibportfolio_pagebtn block_sibportfolio_button' style='{{ style }}' type='submit' value='{{ caption }}'>
+    </form>
+    {{ else }}
+    <button class='block_sibportfolio_button' style='float: left;' type='submit' disabled>..</button>
+    {{/ if }}
+    {{/ each }}
+</script>
+{% endverbatim %}
+
+<script type="text/javascript">
+	var jQuerySibport = jQuery.noConflict(true);
+
+    jQuerySibport(document).ready(function ($) {
+
+		var more = function () {
+			$(this)
+				.parents('tr')
+				.toggleClass('block_sibportfolio_headlinktoggle')
+				.nextAll('.block_sibportfolio_logmore')
+				.slice(0, 5)
+				.toggle();
+			$(this).toggleClass('block_sibportfolio_showmore block_sibportfolio_hidemore');
+		}
+	
+	    $('.block_sibportfolio_logmore').hide();
+	    $('.block_sibportfolio_logbase').removeClass('block_sibportfolio_headlinktoggle');
+	    $('.block_sibportfolio_moreinfo').on('click', more);	
+	
+		var handle = false;
+
+		var click = function (e) {
+			if (!handle) handle = true;
+			else return false;
+
+			e.preventDefault();
+			$("#block_sibportfolio_tablebody").empty();
+			$("#block_sibportfolio_load").show();
+			$.ajax({
+				url: $(e.target).parent("form").attr("action"),
+				timeout: 10000,
+				data: $(e.target).parent("form").serialize(),
+				type: "get",
+				dataType: "json",
+				success: function (data) {
+					$("#block_sibportfolio_tmpl1").template(data).appendTo("#block_sibportfolio_tablebody");
+					$("#block_sibportfolio_pages").empty();
+					$("#block_sibportfolio_tmpl2").template(data).appendTo("#block_sibportfolio_pages");
+					$(".block_sibportfolio_pagebtn").on('click', click);
+					$('.block_sibportfolio_moreinfo').on('click', more);
+				},
+				error: function () {
+					$(".block_sibportfolio_tablediv")
+						.text("{{ error_label }}")
+						.css({
+							color: "red",
+							"text-align": "center",
+							"font-size": "14pt",
+							"font-weight": "bold"
+						});
+				},
+				complete: function () {
+					$("#block_sibportfolio_load").hide();
+					handle = false;
+				}
+			});
+		}
+	
+        $(".block_sibportfolio_pagebtn").on('click', click);
+        $("<div id='block_sibportfolio_load' class='notification_label'><img src='{{ wwwroot }}/blocks/sibportfolio/pix/loading.gif'>  {{ loading_label }}</div>")
+			.appendTo(".block_sibportfolio_tablediv")
+			.hide();
+
+    });
+</script>

@@ -1,0 +1,81 @@
+<div class="block_sibportfolio_content">
+<div style='display: inline-block;'>
+    <h3><i class="fa fa-2x fa-book"></i> {{ header_label }} {{ user_name }}</h3>
+</div>
+<hr class='block_sibportfolio_hr' />
+<div class='block_sibportfolio_tablediv'>
+    {% if find %}
+        {% for file in files %}
+        <table class='table block_sibportfolio_lightgray' cellpadding='5' style='border: 2px solid lightgray; margin-bottom: 10px;'>
+            <tr>
+                <td colspan='{% if claims_block %}4{% else %}3{% endif %}'>{{ file.descr }}</td>
+            </tr>
+            <tr>
+                <td style='width: 225px; vertical-align: middle;'>{{ date_label }}: <i>{{ file.date }}</i></td>
+                <td style='width: 175px; vertical-align: middle;'>
+                    <i class="fa fa-1x fa-file-o "></i>
+                    <span class='block_sibportfolio_helptext' help-attribute='{{ file.filename }}' style='border: none;'>{{ file.link|raw }}</span>
+                </td>
+                <td style='{% if claims_block %}width: 150px;{% endif %} vertical-align: middle;'>
+                    {% if usecomments %}
+                    <i class="fa fa-1x fa-comments"></i>
+                    <a href='{{ file.showcomments_url }}'>{{ comments_label }}: {{ file.commentscount }}</a>
+                    {% endif %}
+                </td>
+                {% if claims_block %}
+                <td style='vertical-align: middle;'>
+                    <form action='{{ wwwroot }}/blocks/sibportfolio/handlers/forms/delfile.php' method='get' style='float: right;'>
+                        <input type='hidden' name='claimid' value='{{ file.claimid }}' />
+                        <input type='hidden' name='returnurl' value='{{ return_url }}' />
+                        <input type='submit' class='block_sibportfolio_button' style='width: 130px; height: 25px; padding: 0; margin: 0; margin-right: 3px;' value='{{ del_label }}'>
+                    </form>
+                    <form action='{{ wwwroot }}/blocks/sibportfolio/handlers/forms/editfile.php' method='get' style='float: right;'>
+                        <input type='hidden' name='claimid' value='{{ file.claimid }}' />
+                        <input type='hidden' name='returnurl' value='{{ return_url }}' />
+                        <input type='submit' class='block_sibportfolio_button' style='width: 130px; height: 25px; padding: 0; margin: 0; margin-right: 3px;' value='{{ edit_label }}'>
+                    </form>
+                </td>
+                {% endif %}
+            </tr>
+            {% if file.comments %}
+            <tr>
+                <td colspan='{% if claims_block %}4{% else %}3{% endif %}'>
+                    <div class='comment-area'>{{ file.comments|raw }}</div>
+                </td>
+            </tr>
+            {% endif %}
+        </table>
+        {% endfor %}
+    {% else %}
+    <div class='notification_label'>
+        {{ not_found_label }}
+    </div>
+    {% endif %}
+</div>
+<hr class='block_sibportfolio_hr' />
+
+{% if claims_block and not user_suspended %}
+<form style='float: left;' action='{{ wwwroot }}/blocks/sibportfolio/handlers/forms/addfile.php' method='get'>
+    <input type='hidden' name='userid' value='{{ user_id }}' />
+    <input type='hidden' name='categoryid' value='{{ category_id }}' />
+    <input id='block_sibportfolio_addru' type='hidden' name='returnurl' value='{{ return_url }}' />
+    <input type='submit' class='block_sibportfolio_button' value='{{ apply_label }}' />
+</form>
+{% endif %}
+
+<div id='block_sibportfolio_pages' style='float: right;'>
+    {% for page in pages %}
+    {% if page.url %}
+    <form style='float: left;' action='{{ wwwroot }}/blocks/sibportfolio/userfiles.php' method='get'>
+        <input type='hidden' name='userid' value='{{ user_id }}' />
+        <input type='hidden' name='categoryid' value='{{ category_id }}' />
+        <input type='hidden' name='page' value='{{ page.caption }}' />
+        <input class='block_sibportfolio_pagebtn block_sibportfolio_button' style='{{ page.style }}' type='submit' value='{{ page.caption }}'>
+    </form>
+    {% else %}
+    <button style='float: left;' type='submit' disabled>..</button>
+    {% endif %}
+    {% endfor %}
+</div>
+
+</div>

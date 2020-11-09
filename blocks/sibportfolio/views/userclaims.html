@@ -1,0 +1,62 @@
+<div class="block_sibportfolio_content">
+<div style='display: inline-block;'>
+    <h3><i class="fa fa-1x fa-briefcase"></i> {{ header_label }} {{ user_name }}</h3>
+</div>
+<hr class='block_sibportfolio_hr' />
+<div class='block_sibportfolio_tablediv'>
+    {% if find %}
+    <div style='text-align: center;'>
+        {{ sort_label }}:
+        {% for sort_link in sort_links %}
+        <a href='{{ wwwroot }}/blocks/sibportfolio/userclaims.php?userid={{ user_id }}&sortorder={{ sort_link.sortorder }}'
+           style='{{ sort_link.style }}' class='block_sibportfolio_sortlink'>{{ sort_link.caption }}</a>
+        <span></span>
+        {% endfor %}
+    </div><br />
+    <table class='table' cellpadding='5'>
+        <thead class='block_sibportfolio_gray'>
+            <tr>
+                <th width='15%'>{{ type_label }}</th>
+                <th width='15%'>{{ date_label }}</th>
+                <th>{{ comment_label }}</th>
+                <th width='20%'>{{ info_label }}</th>
+            </tr>
+        </thead>
+        <tbody id='block_sibportfolio_tablebody'>
+            {% for claim in claims %}
+            <tr class='{{ claim.class }}'>
+                <td>
+                    <i class="fa fa-1x fa-id-card-o"></i>
+                    <a href='{{ wwwroot }}/blocks/sibportfolio/claiminfo.php?claimid={{ claim.id }}&returnurl={{ return_url_enc }}'>{{ claim.type }}</a>
+                </td>
+                <td>{{ claim.date }}</td>
+                <td>{{ claim.comment }}</td>
+                <td><a href='{{ wwwroot }}/blocks/sibportfolio/claiminfo.php?claimid={{ claim.id }}&returnurl={{ return_url_enc }}'><i>{{ more_label }}...</i></a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class='notification_label'>
+        {{ not_found_label }}
+    </div>
+    {% endif %}
+</div>
+<hr class='block_sibportfolio_hr' />
+
+<div id='block_sibportfolio_pages' style='float: right;'>
+    {% for page in pages %}
+    {% if page.url %}
+    <form style='float: left;' action='{{ wwwroot }}/blocks/sibportfolio/userclaims.php' method='get'>
+        <input type='hidden' name='userid' value='{{ user_id }}' />
+        <input type='hidden' name='page' value='{{ page.caption }}' />
+        <input type='hidden' name='sortorder' value='{{ sortorder }}' />
+        <input class='block_sibportfolio_pagebtn block_sibportfolio_button' style='{{ page.style }}' type='submit' value='{{ page.caption }}'>
+    </form>
+    {% else %}
+    <button class='block_sibportfolio_button' style='float: left;' type='submit' disabled>..</button>
+    {% endif %}
+    {% endfor %}
+</div>
+
+</div>

@@ -1,0 +1,43 @@
+<div class="block_sibportfolio_content">
+<div>
+    <div style='display: inline-block;'>
+        <h3><i class="fa fa-1x fa-calendar-plus-o"></i> {{ header_label }}</h3>
+    </div>
+</div>
+<div class='block_sibportfolio_tablediv'>
+    <table class='table' cellpadding='5'>
+        <tbody id='block_sibportfolio_tablebody'>
+            {% for data in claim_info %}
+            <tr class='{{ data.class }}'>
+                <td width='250'><b>{{ data.head }}</b></td>
+                <td>{{ data.row_value|raw }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<div class='form-buttons' style='margin: 0; padding-left: 10px;'>
+    {% if claims_block %}
+    <form style='float: left;' action='{{ wwwroot }}/blocks/sibportfolio/handlers/forms/acceptclaim.php' method='get'>
+        <input type='hidden' name='claimid' value='{{ claim_id }}' />
+        <input type='hidden' name='returnurl' value='{{ return_url }}' />
+        <input  class='block_sibportfolio_button' type='submit' value='{{ accept_label }}'>
+    </form>
+    <form style='float: left;' action='{{ wwwroot }}/blocks/sibportfolio/handlers/forms/rejectclaim.php' method='get'>
+        <input type='hidden' name='claimid' value='{{ claim_id }}' />
+        <input type='hidden' name='returnurl' value='{{ return_url }}' />
+        <input class='block_sibportfolio_button' type='submit' value='{{ reject_label }}'>
+    </form>
+    {% elseif self %}
+    <form action='{{ wwwroot }}/blocks/sibportfolio/handlers/post/rejectclaim.php' method='post'>
+        <input type='hidden' name='claimid' value='{{ claim_id }}' />
+        <input type='hidden' name='returnurl' value='{{ return_url }}' />
+        <input type='hidden' name='sesskey' value='{{ sesskey }}' />
+        <button class='block_sibportfolio_button' type='submit'>
+            <i class="fa fa-1x fa-undo"></i>
+            <span style='padding-left: 5px;'>{{ undo_label }}</span>
+        </button>
+    </form>
+    {% endif %}
+</div>
+</div>

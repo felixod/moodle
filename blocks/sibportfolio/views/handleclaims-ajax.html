@@ -1,0 +1,106 @@
+{% verbatim %}
+<script id="block_sibportfolio_tmpl1" type="text/x-handlebars-template">
+    {{# each users }}
+    <tr>
+        <td>{{{ picture }}} <a href="{{ ../wwwroot }}/blocks/sibportfolio/userclaims.php?userid={{ id }}">{{ fullname }}</a></td>
+        <td>
+            {{# if groups }}
+            {{# each groups }}
+            <span class='{{# if curator }}block_sibportfolio_helptext{{/ if }}' style='{{# ifNotVisible this }}color: #999;{{/ ifNotVisible }}'
+                  help-attribute='{{ ../../../curator_label }}: {{ curator }}'>
+            {{ name }}</span><span class='block_sibportfolio_separator'></span>
+            {{/ each }}
+            {{ else }}—{{/ if }}
+        </td>
+        <td>{{ count_claims }}</td>
+    </tr>
+    {{/ each }}
+</script>
+
+<script id="block_sibportfolio_tmpl2" type="text/x-handlebars-template">
+    {{# each pages }}
+    {{# if url }}
+    <form style='float: left;' action='{{ ../../wwwroot }}/blocks/sibportfolio/handleclaims.php' method='get'>
+        {{# if ../../is_admin }}<input type='hidden' name='userid' value='{{ ../../../user_id }}' />{{/ if }}
+        <input type='hidden' name='page' value='{{ caption }}' />
+        <input type='hidden' name='sortorder' value='{{ ../../sortorder }}' />
+        <input class='block_sibportfolio_pagebtn block_sibportfolio_button' style='{{ style }}' type='submit' value='{{ caption }}'>
+    </form>
+    {{ else }}
+    <button class='block_sibportfolio_button' style='float: left;' type='submit' disabled>..</button>
+    {{/ if }}
+    {{/ each }}
+</script>
+{% endverbatim %}
+
+<script type="text/javascript">
+    var jQuerySibport = jQuery.noConflict(true);
+
+    jQuerySibport(document).ready(function ($) {
+
+        var handle = false;
+
+        var click = function (e) {
+            if (!handle) handle = true;
+            else return false;
+
+            e.preventDefault();
+            $("#block_sibportfolio_tablebody").empty();
+            $("#block_sibportfolio_load").show();
+            var target = $(e.target);
+            var url = target[0].tagName == "A" ? target.attr("href") : target.parent("form").attr("action");
+            var reqData = target[0].tagName == "A" ? null : target.parent("form").serialize();
+
+            if (target[0].tagName == "A") {
+                $(".block_sibportfolio_sortlink").attr("style", "");
+                $(".block_sibportfolio_sortlink").each(function () {
+                    if ($.trim($(this).text()) == $.trim(target.text())) {
+                        $(this).attr("style", "font-weight: bold;");
+                        return false;
+                    }
+                });
+            }
+
+            $.ajax({
+                url: url,
+                timeout: 60000,
+                data: reqData,
+                type: "get",
+                dataType: "json",
+                success: function (data) {
+                    $("#block_sibportfolio_tmpl1").template(data).appendTo("#block_sibportfolio_tablebody");
+                    $("#block_sibportfolio_pages").empty();
+                    $("#block_sibportfolio_tmpl2").template(data).appendTo("#block_sibportfolio_pages");
+                    $(".block_sibportfolio_pagebtn").on('click', click);
+                },
+                error: function () {
+                    $(".block_sibportfolio_tablediv")
+                        .text("{{ error_label }}")
+                        .css({
+                            color: "red",
+                            "text-align": "center",
+                            "font-size": "14pt",
+                            "font-weight": "bold"
+                        });
+                },
+                complete: function () {
+                    $("#block_sibportfolio_load").hide();
+                    handle = false;
+                }
+            });
+        }
+
+        $(".block_sibportfolio_pagebtn").on('click', click);
+        $(".block_sibportfolio_sortlink").on('click', click);
+        $("<div id='block_sibportfolio_load' class='notification_label'><img src='{{ wwwroot }}/blocks/sibportfolio/pix/loading.gif'>  {{ loading_label }}</div>")
+            .appendTo(".block_sibportfolio_tablediv")
+            .hide();
+
+    });
+
+    Handlebars.registerHelper("ifNotVisible", function (value, options) {
+        if (value.visible == false)
+            return options.fn(this);
+        return options.inverse(this);
+    });
+</script>

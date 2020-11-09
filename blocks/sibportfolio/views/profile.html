@@ -1,0 +1,210 @@
+<div class="block_sibportfolio_content">
+<div style='border: 2px solid silver;' class='block_sibportfolio_profile'>
+    <div style='font-size: 16pt; padding: 5px; background-color: lightgray;'>
+        {% if is_curator %}{{ icon_moderator|raw }}{% endif %}
+    
+        <!-- Социальные сети и ссылки !-->
+        {% if user_url %}
+        <a href='{{ user_url }}' target='_blank'><i class="fa fa-chrome"></i></a>
+        {% endif %}
+        {% if ResearcherID %}
+        <a href='https://www.researcherid.com/rid/{{ ResearcherID }}' target='_blank'>
+            <img width="24" height="24" src="https://publons.com/favicon.ico" alt="Google Scholar" /></a>
+        {% endif %}
+        {% if ORCID %}
+        <a href='https://orcid.org/{{ ORCID }}' target='_blank'>
+            <img width="24" height="24" src="https://orcid.org/favicon.ico" alt="Google Scholar" /></a>
+        {% endif %}
+        {% if GoogleScholar %}
+        <a href='https://scholar.google.com/citations?user={{ GoogleScholar }}' target='_blank'>
+            <img width="24" height="24" src="https://scholar.google.com/favicon.ico" alt="Google Scholar" /></a>
+        {% endif %}
+        <b> {{ user_name }}
+            {% if ScienceIndex %}
+            <a href="https://elibrary.ru/author_counter_click.asp?id={{ ScienceIndex }}" target=_blank>
+                <img src="https://elibrary.ru/images/science_index.png" width=11 height=20 border=0 title="Профиль автора в Science Index"></a>
+            {% endif %}
+        </b>
+    </div>
+    <div style='background: linear-gradient(to right, #ddd, #fbfbfb);'>
+        <table class='table table-hover' style='margin: 0;'>
+            <tr>
+                <th rowspan='4' style='text-align: center; vertical-align: middle; padding: 2; border-top: none; border-right: 2px solid lightgray;'>{{ user_picture|raw }}</th>
+                {% if groups_info is iterable %}
+                    {% for group in groups_info %}
+                        {% if not group.disable %}
+                        
+                            <th style='text-align: center; min-width: 150px; border-top: none;' class='block_sibportfolio_gray'>  
+                                <span class='block_sibportfolio_helptext' help-attribute='{{ curator_name_label }}: {{ group.curator }}'>{{ group.name }}</span>
+                                {% if group.curatorid %}
+                                    <a href='{{ wwwroot }}/message/index.php?id={{ group.curatorid }}' target='_blank'>{{ icon_messages|raw }}</a>
+                                {% endif %}       
+                            </th>
+                        {% endif %} 
+                    {% endfor %}
+                {% else %}
+                    <th style='text-align: center; min-width: 150px; border-top: none;' class='block_sibportfolio_gray'>{{ groups_info }}</th>
+                {% endif %}
+            </tr>
+            <tr>
+                {% if groups_info is iterable %}
+                    {% for group in groups_info %}
+                        {% if group.pps %}
+                            <td style='text-align: center; border-left: 1px solid #ddd;'><i>{{ group.record }}</i></td>
+                        {% else %}
+                            {% if not group.disable %}
+                                <td style='text-align: center; border-left: 1px solid #ddd;'><b>{{ record_label }}: </b><i>{{ group.record }}</i></td>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <td style='text-align: center; border-left: 1px solid #ddd;'>—</td>
+                {% endif %}
+                
+            </tr>
+            <tr>
+                {% if groups_info is iterable %}
+                    {% for group in groups_info %}
+                        {% if group.pps %}
+                            <td style='text-align: center; border-left: 1px solid #ddd;'><i>{{ group.speciality }}</i></td>
+                        {% else %}
+                            {% if not group.disable %}
+                                <td style='text-align: center; border-left: 1px solid #ddd;'><b>{{ speciality_label }}: </b><i>{{ group.speciality }}</i></td>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <td style='text-align: center; border-left: 1px solid #ddd;'>—</td>
+                {% endif %}
+            </tr>
+            <tr>
+                {% if groups_info is iterable %}
+                    {% for group in groups_info %}
+                        {% if group.pps %}
+                            <td style='text-align: center; border-left: 1px solid #ddd;'><i>{{ group.study }}</i></td>
+                        {% else %}
+                            {% if not group.disable %}
+                                <td style='text-align: center; border-left: 1px solid #ddd;'><b>{{ study_label }}: </b><i>{{ group.study }}</i></td>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <td style='text-align: center; border-left: 1px solid #ddd;'>—</td>
+                {% endif %}
+            </tr>
+        </table>
+    </div>
+</div>
+
+{% if curator_block %}
+<div class='block_sibportfolio_tablediv'>
+<table class='table' cellpadding='5' style='margin-top: 20px; margin-bottom: 0;'>
+    <tr class='block_sibportfolio_lightgray' style='border: 2px solid silver;'>
+        <td colspan='3'><div class='block_sibportfolio_headlinktoggle block_sibportfolio_files' style='padding: 0;'>{{ groups_cur_label }}</div></td>
+        <td width='25'><div class='block_sibportfolio_moreinfo block_sibportfolio_showmore' title='{{ more_label }}' style='cursor: pointer;'></div></td>
+    </tr>
+    <tr class='block_sibportfolio_blockmore'>
+        <td colspan='4' style='padding: 0;'>
+            <div style='border: 2px solid #ebebeb; border-top: none; margin-left: 3px; margin-right: 3px;'>
+                <table class='generaltable' cellpadding='5' style='margin: 0;'>
+                    <thead>
+                        <tr>
+                            <th>{{ group_label }}</th>
+                            <th width='25%'>{{ count_users_label }}</th>
+                            <th width='25%'>{{ percent_label }}</th>
+                            <th width='25%'>{{ empty_label }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for group in groups_cur_info %}
+                        <tr style='{% if not group.visible %}color: #999;{% endif %}'>
+                            <td>
+                                <a style='{% if not group.visible %}color: #999;{% endif %}' href='{{ wwwroot }}/blocks/sibportfolio/ureport.php?groupid={{ group.id }}'>
+                                    {{ group.name }}
+                                </a>
+                            </td>
+                            <td>{{ group.count_users }}</td>
+                            <td>{{ group.percent_filled }}%</td>
+                            <td>{{ group.count_empty }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </td>
+    </tr>
+</table>
+</div>
+{% endif %}
+
+<div class='block_sibportfolio_headlinktoggle block_sibportfolio_files'>{{ user_files_label }}</div>
+<div class='block_sibportfolio_tablediv'>
+<table class='generaltable' cellpadding='5'>
+    <thead>
+        <tr>
+            <th>{{ category_label }}</th>
+            <th style='text-align: center;'>{{ count_label }}</th>
+            <th style='text-align: center;'>{{ review_label }}</th>
+        </tr>
+    </thead>
+    <tbody id='block_sibportfolio_tablebody'>
+        <!--<tr>
+            <td><i class="fa fa-1x fa-book"></i>{{ view_samgups_label }}<a class="btn btn-link p-a-0" role="button" data-container="body" data-toggle="popover" data-placement="right" data-content="<div class=&quot;no-overflow&quot;><p>Содержимое данной категории формируется автоматически. Обновление происходит не чаще одного раза в сутки.</p></div> " data-html="true" tabindex="0" data-trigger="focus" title=""><i class="icon fa fa-question-circle text-info fa-fw " aria-hidden="true" title="Справка по использованию элемента «{{ view_samgups_label }}»" aria-label="Справка по использованию элемента «{{ view_samgups_label }}»"></i></a></td>
+            <td>-</td>
+            <td><a href='{{ wwwroot }}/blocks/sibportfolio/samgups.php?userid={{ user_id }}'>{{ view_files_label }}</a></td>
+        </tr>!-->
+
+        {% if grouptype == 1 or grouptype == 3 %}
+        <tr>
+            <td><i class="fa fa-1x fa-book"></i> Учебный план, успеваемость, результаты освоения<a class="btn btn-link p-a-0" role="button" data-container="body" data-toggle="popover" data-placement="right" data-content="<div class=&quot;no-overflow&quot;><p>Содержимое данной категории формируется в системе 1C: Университет ПРОФ. Если Вы столкнулись с ошибкой в представленных данных, срочно обратитесь в Ваш деканат.</p></div> " data-html="true" tabindex="0" data-trigger="focus" title=""><i class="icon fa fa-question-circle text-info fa-fw " aria-hidden="true" title="Справка по использованию элемента" aria-label="Справка по использованию элемента"></i></a></td>
+            <td style='text-align: center;'>-</td>
+            <td style='text-align: center;'><a href='https://eios.samgups.ru/student/index'>Личный кабинет</a></td>
+        </tr>
+        {% endif %}
+
+        <!--Категории для студентов-->
+        {% if grouptype == 1 or grouptype == 3 %}
+        {% for keystud, categorystud in categoriesstud %}
+        <tr>
+            <td><i class="fa fa-1x fa-book"></i> {{ categorystud.name|raw }}</td>
+            <td style='text-align: center;'>{{ categorystud.filesCount }}</td>
+            {% if keystud == 0 %}
+            <td style='text-align: center;'><a href='{{ wwwroot }}/blocks/sibportfolio/moodlefiles.php?userid={{ user_id }}'>{{ view_files_label }}</a></td>
+            {% else %}
+            <td style='text-align: center;'><a href='{{ wwwroot }}/blocks/sibportfolio/userfiles.php?userid={{ user_id }}&categoryid={{ categorystud.id }}'>{{ view_files_label }}</a></td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+        {% endif %}
+
+        <!--Категории для преподавателей-->
+        {% if grouptype == 2 or grouptype == 3 %}
+        {% for keyprepod, categoryprepod in categoriesprepod %}
+        <tr>
+            <td><i class="fa fa-1x fa-book"></i> {{ categoryprepod.name|raw }}</td>
+            <td style='text-align: center;'>{{ categoryprepod.filesCount }}</td>
+            <td style='text-align: center;'><a href='{{ wwwroot }}/blocks/sibportfolio/userfiles.php?userid={{ user_id }}&categoryid={{ categoryprepod.id }}'>{{ view_files_label }}</a></td>
+        </tr>
+        {% endfor %}
+        {% endif %}
+        
+        <!--Общие категории-->
+        {% for key, category in categories %}
+        <tr>
+            <td><i class="fa fa-1x fa-book"></i> {{ category.name|raw }}</td>
+            <td style='text-align: center;'>{{ category.filesCount }}</td>
+            <td style='text-align: center;'><a href='{{ wwwroot }}/blocks/sibportfolio/userfiles.php?userid={{ user_id }}&categoryid={{ category.id }}'>{{ view_files_label }}</a></td>
+        </tr>
+        {% endfor %}
+
+    </tbody>
+</table>
+</div>
+{% if claims_block and not user_suspended %}
+    <form action='{{ wwwroot }}/blocks/sibportfolio/handlers/forms/addfile.php' method='get'>
+        <input type='hidden' name='userid' value='{{ user_id }}'/>
+        <input type='hidden' name='returnurl' value='{{ return_url }}' />
+        <input type='submit' class='block_sibportfolio_button' value='{{ apply_label }}' />
+    </form>
+{% endif %}
+</div>

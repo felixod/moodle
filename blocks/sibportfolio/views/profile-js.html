@@ -1,0 +1,24 @@
+<script type="text/javascript">
+	var jQuerySibport = jQuery.noConflict(true);
+
+    jQuerySibport(document).ready(function ($) {
+		var more = function () {
+			$(this).parents('tr').next().toggle();
+			$(this).toggleClass('block_sibportfolio_showmore block_sibportfolio_hidemore');
+		}
+	
+        setInterval(function () {
+            $.ajax({
+                url: "{{ wwwroot }}/blocks/sibportfolio/handlers/ajax/countclaims.php",
+                timeout: 60000,
+                type: "get",
+                dataType: "json",
+                success: function (data) {
+                    $('.block_sibportfolio_notify').text(data);
+                }
+            });
+        }, 600000);
+        $('.block_sibportfolio_blockmore').hide();
+        $('.block_sibportfolio_moreinfo').on('click', more);
+    });
+</script>
