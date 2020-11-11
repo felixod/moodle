@@ -236,7 +236,7 @@ if ($ADMIN->fulltree) {
         'format_tiles/jsmaxstoreditems',
         get_string('jsmaxstoreditems', 'format_tiles'),
         get_string('jsmaxstoreditems_desc', 'format_tiles'),
-        8,
+        0,
         $choices);
     $page->add($setting);
 
@@ -298,6 +298,24 @@ if ($ADMIN->fulltree) {
 
     // Other settings.
     $page = new admin_settingpage('format_tiles/tab-other', get_string('other', 'format_tiles'));
+
+    $page->add(
+        new admin_setting_heading(
+            'problemcourses',
+            get_string('problemcourses', 'format_tiles'),
+            html_writer::link(
+                \format_tiles\course_section_manager::get_list_problem_courses_url(),
+                get_string('checkforproblemcourses', 'format_tiles'),
+                ['class' => 'btn btn-primary', 'target' => '_blank']
+            )
+        )
+    );
+
+    $page->add(
+        new admin_setting_heading('other', get_string('other', 'format_tiles'),
+            '')
+    );
+
 
     $name = 'format_tiles/allowsubtilesview';
     $title = get_string('allowsubtilesview', 'format_tiles');
