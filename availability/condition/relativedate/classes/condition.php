@@ -122,11 +122,11 @@ class condition extends \core_availability\condition {
         }
         $calc = $this->calc($course, $USER->id);
         if ($calc == 0) {
-            return '';
+            return '('. trim($this->get_debug_string()) . ')';
         }
         $a = new \stdClass();
         $a->rnumber = userdate($calc, get_string('strftimedatetime', 'langconfig'));
-        $a->rtime = $capability ? '('. trim($this->get_debug_string()) . ')' : '';
+        $a->rtime = ($capability && $full) ? '('. trim($this->get_debug_string()) . ')' : '';
         $a->rela = '';
         return trim(get_string($frut, 'availability_relativedate', $a));
     }
@@ -214,31 +214,33 @@ class condition extends \core_availability\condition {
             }
         } else if ($this->relativestart == 3) {
             $uid = ($userid != $USER->id) ? $userid : $USER->id;
-            $sql = 'SELECT MAX(GREATEST(ue.timestart, ue.timecreated)) AS uedate
+            $sql = 'SELECT GREATEST(ue.timestart, ue.timecreated) AS uedate
                     FROM {user_enrolments} ue
                     JOIN {enrol} e on ue.enrolid = e.id
-                    WHERE e.courseid = ? AND ue.userid = ?
+                    WHERE e.courseid = :courseid AND ue.userid = :userid
                     ORDER by uedate DESC
                     LIMIT 1';
-            if ($lowest = $DB->get_record_sql($sql, [$uid, $course->id, $uid])) {
+            if ($lowest = $DB->get_record_sql($sql, ['courseid' => $course->id, 'userid' => $uid])) {
                 $lowest = reset($lowest);
-                $lowest = ($lowest == 0) ? time() : $lowest;
-                $calc = strtotime("+$this->relativenumber $x", $lowest);
-                return $this->fixcalc($calc, $lowest);
+                if ($lowest > 0) {
+                    $calc = strtotime("+$this->relativenumber $x", $lowest);
+                    return $this->fixcalc($calc, $lowest);
+                }
             }
         } else if ($this->relativestart == 4) {
             $uid = ($userid != $USER->id) ? $userid : $USER->id;
             $sql = 'SELECT e.enrolenddate
                     FROM {user_enrolments} ue
                     JOIN {enrol} e on ue.enrolid = e.id
-                    WHERE e.courseid = ? AND ue.userid = ?
+                    WHERE e.courseid = :courseid AND ue.userid = :userid
                     ORDER by e.enrolenddate DESC
                     LIMIT 1';
-            if ($lowest = $DB->get_record_sql($sql, [$course->id, $uid])) {
+            if ($lowest = $DB->get_record_sql($sql, ['courseid' => $course->id, 'userid' => $uid])) {
                 $lowest = reset($lowest);
-                $lowest = ($lowest == 0) ? time() : $lowest;
-                $calc = strtotime("+$this->relativenumber $x", $lowest);
-                return $this->fixcalc($calc, $lowest);
+                if ($lowest > 0) {
+                    $calc = strtotime("+$this->relativenumber $x", $lowest);
+                    return $this->fixcalc($calc, $lowest);
+                }
             }
         }
         return 0;
