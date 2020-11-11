@@ -160,7 +160,7 @@ class block_graph_stats extends block_base {
             }
             if ($connections === false || $needtoupdate) {
                 // In a course.
-                $sql = "SELECT COUNT (*) as countid FROM (SELECT userid FROM {logstore_standard_log}
+                $sql = "SELECT count(*) as countid FROM (SELECT userid FROM {logstore_standard_log}
                         WHERE timecreated >= :time AND eventname = :eventname  AND courseid = :course GROUP BY userid) AS users";
                 $params = array(
                         'time' => usergetmidnight(time()),
@@ -180,7 +180,7 @@ class block_graph_stats extends block_base {
             }
             if ($connections === false || $needtoupdate) {
                 // In the front page.
-                $sql = "SELECT COUNT (*) as countid FROM (SELECT userid FROM {logstore_standard_log}
+                $sql = "SELECT count(*) as countid FROM (SELECT userid FROM {logstore_standard_log}
                         WHERE timecreated >= :time AND eventname = :eventname GROUP BY userid) AS users";
                 $params = array(
                         'time' => usergetmidnight(time()),

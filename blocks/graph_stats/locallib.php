@@ -86,7 +86,7 @@ function block_graph_stats_graph_google($courseid) {
                 $visits1[$a] = $cache->get('visits1_' . $courseid . '_' . $time1);
             }
             if ($visits1[$a] === false || $needtoupdate) {
-                $sql = "SELECT COUNT (*) as countid FROM (SELECT userid
+                $sql = "SELECT count(*) as countid FROM (SELECT userid
                         FROM {logstore_standard_log}
                         WHERE timecreated >= :time1 AND timecreated < :time2 AND eventname = :eventname  AND courseid = :course GROUP BY userid) AS users";
                 $params = array(
@@ -120,7 +120,7 @@ function block_graph_stats_graph_google($courseid) {
                 $visits2[$a] = $cache->get('visits2_' . $courseid . '_' . $time1);
             }
             if ($visits2[$a] === false || $needtoupdate) {
-                $sql = "SELECT COUNT (*) as countid FROM (SELECT userid
+                $sql = "SELECT count(*) as countid FROM (SELECT userid
                         FROM {logstore_standard_log}
                         WHERE timecreated >= :time1 AND timecreated < :time2 AND eventname = :eventname GROUP BY userid) AS users";
                 $params = array(
