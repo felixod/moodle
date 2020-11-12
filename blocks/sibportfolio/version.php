@@ -25,11 +25,11 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->cron = 600;
-$plugin->version   = 2017033002;
+$plugin->version   = 2020111001;
 $plugin->maturity  = MATURITY_STABLE;
 $plugin->requires  = 2014110400;
 $plugin->component = 'block_sibportfolio';
-$plugin->release = 'v1.7';
+$plugin->release = 'v1.7.1';
 
 $plugin->dependencies = array(
     'mod_assign' => 2014111001,
