@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->cron = 600;
-$plugin->version   = 2020111001;
+$plugin->version   = 2020111002;
 $plugin->maturity  = MATURITY_STABLE;
 $plugin->requires  = 2014110400;
 $plugin->component = 'block_sibportfolio';
