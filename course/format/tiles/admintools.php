@@ -61,6 +61,7 @@ switch ($action) {
         break;
     case 'canceldeleteemptysections':
         cancel_delete_empty_sections();
+        break;
     case 'listproblemcourses':
         $o = list_problem_courses();
         break;
@@ -151,6 +152,7 @@ function reset_colours($settingsurl, $pageurl) {
             get_string('tilecolourschanged', 'format_tiles'), null, \core\output\notification::NOTIFY_SUCCESS
         );
     }
+    return '';
 }
 
 function schedule_delete_empty_sections() {
@@ -233,7 +235,10 @@ function list_problem_courses() {
         $o .= html_writer::div(get_string('maxcoursesectionsallowed', 'format_tiles', $maxsections));
         $o .= html_writer::table($table);
     } else {
-        $o .= get_string('noproblemsfound', 'format_tiles');
+        $o .= html_writer::div(
+            get_string('noproblemsfound', 'format_tiles'),
+            'alert alert-success'
+        );
     }
     return $o;
 }
