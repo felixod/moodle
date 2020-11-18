@@ -653,6 +653,14 @@ class unified extends \local_o365\rest\o365api {
             'companyName',
             'preferredLanguage',
             'employeeId',
+            'businessPhones',
+            'faxNumber',
+            'mobilePhone',
+            'officeLocation',
+            'preferredName',
+            'manager',
+            'teams',
+            'groups',
         ];
     }
 
@@ -672,6 +680,12 @@ class unified extends \local_o365\rest\o365api {
             $params = $this->get_default_user_fields();
         }
         if (is_array($params)) {
+            $excludedfields = ['preferredName', 'teams', 'groups'];
+            foreach ($excludedfields as $excludedfield) {
+                if (($key = array_search($excludedfield, $params)) !== false) {
+                    unset($params[$key]);
+                }
+            }
             $odataqueries[] = '$select='.implode(',', $params);
         }
 
@@ -697,7 +711,13 @@ class unified extends \local_o365\rest\o365api {
         if ($params === 'default') {
             $params = $this->get_default_user_fields();
         }
-        if (is_array($params) && empty($skiptoken) && empty($deltatoken)) {
+        if (is_array($params)) {
+            $excludedfields = ['preferredName', 'teams', 'groups'];
+            foreach ($excludedfields as $excludedfield) {
+                if (($key = array_search($excludedfield, $params)) !== false) {
+                    unset($params[$key]);
+                }
+            }
             $odataqueries[] = '$select='.implode(',', $params);
         }
 
@@ -717,7 +737,7 @@ class unified extends \local_o365\rest\o365api {
 
         $response = $this->apicall('get', $endpoint);
         $result = $this->process_apicall_response($response, ['value' => null]);
-        $users = null;
+        $users = [];
         $skiptoken = null;
         $deltatoken = null;
 
@@ -736,6 +756,32 @@ class unified extends \local_o365\rest\o365api {
         }
 
         return [$users, $skiptoken, $deltatoken];
+    }
+
+    public function get_user_manager($userobjectid) {
+        $endpoint = "users/$userobjectid/manager";
+        $response = $this->apicall('get', $endpoint);
+        try {
+            $result = $this->process_apicall_response($response);
+        } catch (\Exception $e) {
+            return null;
+        }
+
+        return $result;
+    }
+
+    public function get_user_groups($userobjectid) {
+        $endpoint = "users/$userobjectid/memberOf";
+        $response = $this->apicall('get', $endpoint);
+        $result = $this->process_apicall_response($response, ['value' => null]);
+        return $result['value'];
+    }
+
+    public function get_user_teams($userobjectid) {
+        $endpoint = "users/$userobjectid/joinedTeams";
+        $response = $this->apicall('get', $endpoint);
+        $result = $this->process_apicall_response($response, ['value' => null]);
+        return $result['value'];
     }
 
     /**
@@ -1746,27 +1792,7 @@ class unified extends \local_o365\rest\o365api {
         $odataqueries = [];
         $context = 'https://graph.microsoft.com/v1.0/$metadata#users/$entity';
         if ($params === 'default') {
-            $params = [
-                'id',
-                'userPrincipalName',
-                'displayName',
-                'givenName',
-                'surname',
-                'mail',
-                'streetAddress',
-                'city',
-                'postalCode',
-                'state',
-                'country',
-                'jobTitle',
-                'department',
-                'companyName',
-                'preferredLanguage',
-                'businessPhones',
-                'facsimileTelephoneNumber',
-                'mobilePhone',
-                'employeeId',
-            ];
+            $params = $this->get_default_user_fields();
             $context = 'https://graph.microsoft.com/v1.0/$metadata#users(';
             $context = $context.join(',', $params).')/$entity';
             $odataqueries[] = '$select='.implode(',', $params);
@@ -2101,5 +2127,23 @@ class unified extends \local_o365\rest\o365api {
         }
 
         return $this->betaapicall('post', '/teams', json_encode($teamdata));
+    }
+
+    /**
+     * Get user timezone in Outlook settings.
+     *
+     * @param $upn
+     *
+     * @return array|null
+     */
+    public function get_user_timezone_by_upn($upn) {
+        $endpoint = '/users/' . $upn . '/mailboxSettings/timeZone';
+        try {
+            $response = $this->betaapicall('get', $endpoint);
+            $expectedparams = ['value' => null];
+            return $this->process_apicall_response($response, $expectedparams);
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 }

@@ -272,43 +272,66 @@ class observers {
                 return false;
             }
 
+            if (!$existinguserdata = \core_user::get_user($userid)) {
+                // Moodle user doesn't exist, nothing to do.
+                return false;
+            }
+
+            // Skip field mapping if the user uses auth_oidc, and matching record is stored in local_o365_objects table.
+            if ($existinguserdata->auth == 'oidc') {
+                if ($DB->record_exists('local_o365_objects', ['type' => 'user', 'moodleid' => $userid])) {
+                    return true;
+                }
+            }
+            
             $idtoken = \auth_oidc\jwt::instance_from_encoded($o365user->get_idtoken());
-            $apiclient = \local_o365\utils::get_api($userid);
-            $userdata = $apiclient->get_user($o365user->objectid);
-            // Azuread users objectid, unified uses id.
-            if (\local_o365\rest\unified::is_configured() && empty($userdata['objectId']) && !empty($userdata['id'])) {
-                $userdata['objectId'] = $userdata['id'];
-            }
 
-            // Extract basic information from the IDToken.
-            $updateduser = new \stdClass;
-            $firstname = $idtoken->claim('given_name');
-            if (!empty($firstname)) {
-                $updateduser->firstname = $firstname;
-            }
+            $userdata = [];
 
-            $lastname = $idtoken->claim('family_name');
-            if (!empty($lastname)) {
-                $updateduser->lastname = $lastname;
-            }
+            if (\local_o365\feature\usersync\main::fieldmap_require_graph_api_call($eventtype)) {
+                $apiclient = \local_o365\utils::get_api($userid);
+                $userdata = $apiclient->get_user($o365user->objectid);
+                // Azuread users objectid, unified uses id.
+                if (\local_o365\rest\unified::is_configured() && empty($userdata['objectId']) && !empty($userdata['id'])) {
+                    $userdata['objectId'] = $userdata['id'];
+                }
+            } else {
+                // Extract basic information from the IDToken.
+                $oid = $idtoken->claim('oid');
+                if (!empty($oid)) {
+                    $userdata['objectId'] = $oid;
+                }
 
-            $email = $idtoken->claim('email');
-            if (!empty($email)) {
-                $updateduser->email = $email;
-            }
+                $upn = $idtoken->claim('upn');
+                if (!empty($upn)) {
+                    $userdata['userPrincipalName'] = $upn;
+                }
 
-            if (empty($updateduser->email)) {
-                $aademail = $idtoken->claim('upn');
-                if (!empty($aademail)) {
-                    $aademailvalidateresult = filter_var($aademail, FILTER_VALIDATE_EMAIL);
-                    if (!empty($aademailvalidateresult)) {
-                        $updateduser->email = $aademail;
+                $firstname = $idtoken->claim('given_name');
+                if (!empty($firstname)) {
+                    $userdata['givenName'] = $firstname;
+                }
+
+                $lastname = $idtoken->claim('family_name');
+                if (!empty($lastname)) {
+                    $userdata['surname'] = $lastname;
+                }
+
+                $email = $idtoken->claim('email');
+                if (!empty($email)) {
+                    $userdata['mail'] = $email;
+                } else {
+                    if (!empty($upn)) {
+                        $aademailvalidateresult = filter_var($upn, FILTER_VALIDATE_EMAIL);
+                        if (!empty($aademailvalidateresult)) {
+                            $userdata['mail'] = $aademailvalidateresult;
+                        }
                     }
                 }
             }
 
             // Then apply the custom field map.
-            $updateduser = \local_o365\feature\usersync\main::apply_configured_fieldmap($userdata, $updateduser, $eventtype);
+            $updateduser = \local_o365\feature\usersync\main::apply_configured_fieldmap($userdata, new \stdClass(), $eventtype);
 
             // Save profile data.
             if (!empty($updateduser)) {
@@ -446,8 +469,7 @@ class observers {
         }
 
         // Check if the user was suspended, or unsuspended. Add or remove them from the teams course group as appropriate.
-        $suspendedusers = get_suspended_userids(\context_course::instance($courseid));
-        if (isset($suspendedusers[$userid])) {
+        if (!is_enrolled(\context_course::instance($courseid), $userid, null, true)) {
             // We need to remove the user.
             try {
                 // Remove user from course usergroup.
@@ -557,13 +579,17 @@ class observers {
      */
     public static function handle_course_deleted(\core\event\course_deleted $event) {
         global $DB;
-        if (\local_o365\utils::is_configured() !== true || \local_o365\rest\sharepoint::is_configured() !== true) {
+        if (\local_o365\utils::is_configured() !== true) {
             return false;
         }
         $courseid = $event->objectid;
 
         // delete course group
         \local_o365\feature\usergroups\utils::delete_course_group($courseid);
+
+        if (\local_o365\rest\sharepoint::is_configured() !== true) {
+            return false;
+        }
 
         $sharepoint = static::construct_sharepoint_api_with_system_user();
         if (!empty($sharepoint)) {
@@ -748,7 +774,11 @@ class observers {
                         $roles = get_roles_with_capability('local/o365:teamowner', CAP_ALLOW, $context);
                         if (!empty($roles)) {
                             $roles = array_keys($roles);
-                            if (in_array($roleid, $roles)) {
+                            $userroles = get_user_roles($context, $userid, false);
+                            $userroleids = array_column($userroles, 'roleid');
+                            unset($userroleids[$roleid]);
+
+                            if (empty(array_intersect($roles, $userroleids))) {
                                 $apiclient = \local_o365\utils::get_api();
                                 $response = $apiclient->remove_owner_from_course_group($courseid, $userid);
                                 // add the user back to the group as member
@@ -960,6 +990,35 @@ class observers {
 
                 redirect($ssologouturl);
             }
+        }
+
+        return true;
+    }
+
+    /**
+     * If "clientid" value of "auth_oidc" is changed, clear all tokens reported to user.
+     *
+     * @param \core\event\config_log_created $event
+     *
+     * @return bool
+     */
+    public static function handle_config_log_created(\core\event\config_log_created $event) {
+        global $DB;
+
+        $eventdata = $event->get_data();
+
+        if ($eventdata['other']['plugin'] == 'auth_oidc' && $eventdata['other']['name'] == 'clientid') {
+            // Clear local_o365_token table.
+            $DB->delete_records('local_o365_token');
+
+            // Clear auth_oidc_token table.
+            $DB->delete_records('auth_oidc_token');
+
+            // Clear local_o365_connections table.
+            $DB->delete_records('local_o365_connections');
+
+            // Clear user records in local_o365_objects table.
+            $DB->delete_records('local_o365_objects', ['type' => 'user']);
         }
 
         return true;
