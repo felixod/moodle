@@ -230,6 +230,9 @@ class mod_lanebs_external extends external_api
         if (isset($_SESSION['subscriberToken']) && !empty($_SESSION['subscriberToken'])) {
             self::$subscribeToken = $_SESSION['subscriberToken'];
         }
+	if (isset($_SESSION['readerToken']) && !empty($_SESSION['readerToken'])) {
+    	    return array('body' => json_encode(array('error' => array('code' => 200), 'status' => 'skip', 'message' => 'token already exist')));
+	}
         $curl = new curl();
         $options = array(
             'CURLOPT_POST'              => false,

@@ -1,6 +1,6 @@
-# Библиотечная интеграция #
+# Library Integration #
 
-Plugin for integration with EBS
+Plugin for integration with library system
 
 ## License ##
 

@@ -46,15 +46,16 @@ define(["exports", "jquery", "core/ajax", "core/modal_factory", "core/modal_even
                 return response;
             }).
             done(function (response) {
-                let error = JSON.parse(response['body']).error;
-                if (error && error.code === 404) {
-                    let errorMsg = 'Ресурс отсутствует в Вашем пользовании. Обратитесь к администратору.';
-                    alert(errorMsg);
-                    ModalBook.prototype.getBookResult(errorMsg);
-                }
-                else {
-                    ModalBook.prototype.getBookResult(response['body']);
-                }
+		try {
+		    let error = JSON.parse(response['body']).error;
+		    if (error && error.code === 404) {
+			let errorMsg = 'Ресурс отсутствует в Вашем пользовании. Обратитесь к администратору.';
+                        alert(errorMsg);
+                	ModalBook.prototype.getBookResult(errorMsg);
+		    }
+		} catch (e) {
+		    ModalBook.prototype.getBookResult(response['body']);
+		}
             }).fail(function (response) {
                 alert(response);
             });
@@ -80,7 +81,7 @@ define(["exports", "jquery", "core/ajax", "core/modal_factory", "core/modal_even
     };
 
     ModalBook.prototype.getBookResult = function (response) {
-        //console.log(response);
+        console.log(response);
         let iframeBook = document.getElementById('book_iframe');
         iframeBook.contentWindow.document.open();
         iframeBook.contentWindow.document.write(response);
