@@ -1,7 +1,7 @@
 moodle-local_resort_courses
 ===========================
 
-[![Build Status](https://travis-ci.org/moodleuulm/moodle-local_resort_courses.svg?branch=master)](https://travis-ci.org/moodleuulm/moodle-local_resort_courses)
+[![Build Status](https://travis-ci.com/moodleuulm/moodle-local_resort_courses.svg?branch=master)](https://travis-ci.com/moodleuulm/moodle-local_resort_courses)
 
 Moodle plugin which sorts a category page automatically as soon as a course has been added or modified
 
@@ -9,7 +9,7 @@ Moodle plugin which sorts a category page automatically as soon as a course has 
 Requirements
 ------------
 
-This plugin requires Moodle 3.8+
+This plugin requires Moodle 3.9+
 
 
 Motivation for this plugin
@@ -58,6 +58,8 @@ How this plugin works
 ---------------------
 
 This plugin simply catches the course_created and course_updated events which are fired when a course is created and updates and sorts the course's category automatically. That's it.
+
+Additionally, there is a scheduled task local_resort_courses\task\resort_courses which is disabled by default but which can be enabled to make sure that all categories are sorted properly in any case.
 
 
 Theme support

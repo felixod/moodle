@@ -63,14 +63,10 @@ if ($hassiteconfig) {
 
         // Create skip categories widget.
         $categories = make_categories_options();
-        foreach ($categories as $id => $category) {
-            // This is needed because of MDL-57678 until this problem is fixed in Moodle core.
-            $categories[$id] = html_entity_decode($category);
-        }
         $page->add(new admin_setting_configmultiselect('local_resort_courses/skipcategories',
                 get_string('skipcategories', 'local_resort_courses', null, true),
                 get_string('skipcategories_desc', 'local_resort_courses', null, true),
-                null,
+                array(),
                 $categories));
 
         // Create skip categories recursively widget.

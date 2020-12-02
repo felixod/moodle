@@ -15,33 +15,46 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Local plugin "resort courses" - Privacy provider
+ * Local plugin "resort courses" - Task definition
  *
  * @package    local_resort_courses
- * @copyright  2018 Alexander Bias, Ulm University <alexander.bias@uni-ulm.de>
+ * @copyright  2020 Alexander Bias, Ulm University <alexander.bias@uni-ulm.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace local_resort_courses\privacy;
+namespace local_resort_courses\task;
 
-defined('MOODLE_INTERNAL') || die();
+defined('MOODLE_INTERNAL') || die;
 
 /**
- * Privacy Subsystem implementing null_provider.
+ * The local_resort_courses scheduled task class for re-sorting all courses in all categories.
  *
  * @package    local_resort_courses
- * @copyright  2018 Alexander Bias, Ulm University <alexander.bias@uni-ulm.de>
+ * @copyright  2020 Alexander Bias, Ulm University <alexander.bias@uni-ulm.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class provider implements \core_privacy\local\metadata\null_provider {
+class resort_courses extends \core\task\scheduled_task {
 
     /**
-     * Get the language string identifier with the component's language
-     * file to explain why this plugin stores no data.
+     * Return localised task name.
      *
      * @return string
      */
-    public static function get_reason() : string {
-        return 'privacy:metadata';
+    public function get_name() {
+        return get_string('resorttask', 'local_resort_courses');
+    }
+
+    /**
+     * Execute scheduled task.
+     *
+     * @return boolean
+     */
+    public function execute() {
+        global $CFG;
+        require_once($CFG->dirroot.'/local/resort_courses/locallib.php');
+        resort_courses_cron();
+
+        // Return true in any case as this plugin does not really have any error handling if a category could not be sorted.
+        return true;
     }
 }

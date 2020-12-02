@@ -4,6 +4,15 @@ moodle-local_resort_courses
 Changes
 -------
 
+### v3.9-r1
+
+* 2020-11-24 - Feature: Add a scheduled task which will re-sort all categories in the Moodle instance to make sure that all categories are sorted properly in any case.
+               Please note: This scheduled task is disabled by default.
+* 2020-11-24 - Improvement: Initialize the skipcategories setting with a proper default value. This did not affect the UI but some automated tests in Moodle core - Thanks to @ewallah for highlighting the issue.
+* 2020-11-24 - Improvement: After MDL-57678 was integrated to Moodle core, remove local workaround for the fact that the select categories widgets did not properly handle &nbsp;.
+               Please note: This raises the required Moodle core version to 3.9.2.
+* 2020-11-24 - Prepare compatibility for Moodle 3.9.
+
 ### v3.8-r1
 
 * 2020-02-13 - Prepare compatibility for Moodle 3.8.
