@@ -23,14 +23,6 @@ php:
 
 env:
   - DB=pgsql MOODLE_BRANCH=master
-  - DB=mysqli MOODLE_BRANCH=master
-
-jobs:
-  include:
-    - php: 7.3
-      env: DB=mysqli MOODLE_BRANCH=MOODLE_38_STABLE
-    - env: DB=mysqli MOODLE_BRANCH=MOODLE_39_STABLE
-    # Language files not yet available - env: DB=mysqli MOODLE_BRANCH=MOODLE_310_STABLE
 
 before_install:
   - phpenv config-rm xdebug.ini
@@ -40,7 +32,6 @@ before_install:
 
 install:
   - moodle-plugin-ci install
-  - cd moodle
 
 script:
   - moodle-plugin-ci phplint
@@ -55,11 +46,6 @@ script:
   - moodle-plugin-ci phpunit --coverage-text --coverage-clover
   - moodle-plugin-ci behat
   - moodle-plugin-ci behat --profile chrome
-  - php admin/tool/behat/cli/init.php -a="classic"
-  - moodle-plugin-ci behat --suite="classic"
-  - moodle-plugin-ci behat --suite="classic" --profile chrome
-  - moodle-plugin-ci behat --suite="classic" --profile chrome blocks/admin_bookmarks
-  - vendor/bin/phpunit --testsuite core_privacy_testsuite,tool_dataprivacy_testsuite > /dev/null
 
 after_success:
   - moodle-plugin-ci coveralls-upload
