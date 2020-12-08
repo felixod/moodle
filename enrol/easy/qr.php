@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Enroll via QR Code</title>
+    <title>Запись с помощью QR-кода</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
   </head>
   <body>

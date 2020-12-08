@@ -160,7 +160,7 @@ class enrol_easy_plugin extends enrol_plugin {
             $code = $code->enrolmentcode;
         }
 
-        $codetext = $mform->addElement('text', 'course_' . $COURSE->id, 'Course: ' . $COURSE->fullname, array('readonly' => ''));
+        $codetext = $mform->addElement('text', 'course_' . $COURSE->id, 'Дисциплина: ' . $COURSE->fullname, array('readonly' => ''));
         $mform->setType('course_' . $COURSE->id, PARAM_NOTAGS);
         $mform->setDefault('course_' . $COURSE->id,  $code);
         $mform->updateElementAttr('course_' . $COURSE->id, array('data-type' => 'enroleasycode')); // For whatever reason it refuses to set a class, so data attr it is.
