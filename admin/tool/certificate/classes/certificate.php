@@ -299,30 +299,11 @@ class certificate {
             $code .= mt_rand(0, 9);
         }
         if ($user) {
-            $code .= mb_strtoupper(substr(self::translit($user->firstname), 0, 1)) ?? '';
-            $code .= mb_strtoupper(substr(self::translit($user->lastname), 0, 1)) ?? '';
+            $code .= mb_strtoupper(substr($user->firstname, 0, 1)) ?? '';
+            $code .= mb_strtoupper(substr($user->lastname, 0, 1)) ?? '';
         }
 
         return $code;
-    }
-
-    /**
-    * Преобразуем текст в латиницу FELIXOD
-    *
-    * @param string $s Строка русского текста.
-    * @return string Строка транслита.
-    */
-    function translit($s) {
-        $s = (string) $s; // преобразуем в строковое значение
-        $s = strip_tags($s); // убираем HTML-теги
-        $s = str_replace(array("\n", "\r"), " ", $s); // убираем перевод каретки
-        $s = preg_replace("/\s+/", ' ', $s); // удаляем повторяющие пробелы
-        $s = trim($s); // убираем пробелы в начале и конце строки
-        $s = function_exists('mb_strtolower') ? mb_strtolower($s) : strtolower($s); // переводим строку в нижний регистр (иногда надо задать локаль)
-        $s = strtr($s, array('а'=>'a','б'=>'b','в'=>'v','г'=>'g','д'=>'d','е'=>'e','ё'=>'e','ж'=>'j','з'=>'z','и'=>'i','й'=>'y','к'=>'k','л'=>'l','м'=>'m','н'=>'n','о'=>'o','п'=>'p','р'=>'r','с'=>'s','т'=>'t','у'=>'u','ф'=>'f','х'=>'h','ц'=>'c','ч'=>'ch','ш'=>'sh','щ'=>'shch','ы'=>'y','э'=>'e','ю'=>'yu','я'=>'ya','ъ'=>'','ь'=>''));
-        $s = preg_replace("/[^0-9a-z-_ ]/i", "", $s); // очищаем строку от недопустимых символов
-        $s = str_replace(" ", "-", $s); // заменяем пробелы знаком минус
-        return $s; // возвращаем результат
     }
 
     /**
@@ -460,26 +441,26 @@ class certificate {
         self::create_demo_element_file($element->get('id'), "{$CFG->dirroot}/{$CFG->admin}/tool/certificate/pix/background.jpg");
 
         $str = get_string('demotmplawardedto', 'tool_certificate');
-        $elementrecord = ['pageid' => $page->get_id(), 'name' => $str, 'element' => 'text', 'data' => $str, 'font' => 'helvetica',
+        $elementrecord = ['pageid' => $page->get_id(), 'name' => $str, 'element' => 'text', 'data' => $str, 'font' => 'freesans',
             'fontsize' => 12, 'colour' => '#fff', 'posx' => 25, 'posy' => 25, 'sequence' => 2, 'refpoint' => 0];
         $element = new \tool_certificate\persistent\element(0, (object)$elementrecord);
         $element->save();
 
         $str = get_string('demotmplusername', 'tool_certificate');
         $elementrecord = ['pageid' => $page->get_id(), 'name' => $str, 'element' => 'userfield', 'data' => 'fullname',
-            'font' => 'helveticab', 'fontsize' => 26, 'colour' => '#fff', 'posx' => 25, 'posy' => 30, 'sequence' => 3,
+            'font' => 'freesansb', 'fontsize' => 26, 'colour' => '#fff', 'posx' => 25, 'posy' => 30, 'sequence' => 3,
             'refpoint' => 0];
         $element = new \tool_certificate\persistent\element(0, (object)$elementrecord);
         $element->save();
 
         $str = get_string('demotmplforcompleting', 'tool_certificate');
-        $elementrecord = ['pageid' => $page->get_id(), 'name' => $str, 'element' => 'text', 'data' => $str, 'font' => 'helvetica',
+        $elementrecord = ['pageid' => $page->get_id(), 'name' => $str, 'element' => 'text', 'data' => $str, 'font' => 'freesans',
             'fontsize' => 12, 'colour' => '#fff', 'posx' => 25, 'posy' => 52, 'sequence' => 4, 'refpoint' => 0];
         $element = new \tool_certificate\persistent\element(0, (object)$elementrecord);
         $element->save();
 
         $str = get_string('demotmplcoursefullname', 'tool_certificate');
-        $elementrecord = ['pageid' => $page->get_id(), 'name' => $str, 'element' => 'program', 'font' => 'helveticab',
+        $elementrecord = ['pageid' => $page->get_id(), 'name' => $str, 'element' => 'program', 'font' => 'freesansb',
             'fontsize' => 26, 'data' => json_encode(['display' => 'coursefullname']), 'colour' => '#fff', 'posx' => 25,
             'posy' => 57, 'sequence' => 5, 'refpoint' => 0];
         $element = new \tool_certificate\persistent\element(0, (object)$elementrecord);
@@ -487,20 +468,20 @@ class certificate {
 
         $str = get_string('demotmplawardedon', 'tool_certificate');
         $elementrecord = ['pageid' => $page->get_id(), 'name' => $str, 'element' => 'text', 'data' => $str,
-            'font' => 'helvetica', 'fontsize' => 12, 'colour' => '#fff', 'posx' => 25, 'posy' => 80, 'sequence' => 6,
+            'font' => 'freesans', 'fontsize' => 12, 'colour' => '#fff', 'posx' => 25, 'posy' => 80, 'sequence' => 6,
             'refpoint' => 0];
         $element = new \tool_certificate\persistent\element(0, (object)$elementrecord);
         $element->save();
 
         $str = get_string('demotmplissueddate', 'tool_certificate');
-        $elementrecord = ['pageid' => $page->get_id(), 'name' => $str, 'element' => 'date', 'font' => 'helveticab',
+        $elementrecord = ['pageid' => $page->get_id(), 'name' => $str, 'element' => 'date', 'font' => 'freesansb',
             'fontsize' => 12, 'data' => json_encode(['dateitem' => -1, 'dateformat' => 'strftimedate']), 'colour' => '#fff',
             'posx' => 49, 'posy' => 80, 'sequence' => 7, 'refpoint' => 0];
         $element = new \tool_certificate\persistent\element(0, (object)$elementrecord);
         $element->save();
 
         $str = get_string('demotmplqrcode', 'tool_certificate');
-        $elementrecord = ['pageid' => $page->get_id(), 'name' => $str, 'element' => 'code', 'font' => 'helvetica',
+        $elementrecord = ['pageid' => $page->get_id(), 'name' => $str, 'element' => 'code', 'font' => 'freesans',
             'fontsize' => 12, 'data' => json_encode(['display' => 4]), 'colour' => '#000000',
             'posx' => 44, 'posy' => 157, 'width' => 35, 'sequence' => 8, 'refpoint' => 1];
         $element = new \tool_certificate\persistent\element(0, (object)$elementrecord);
@@ -513,14 +494,14 @@ class certificate {
         $element->save();
         self::create_demo_element_file($element->get('id'), "{$CFG->dirroot}/{$CFG->admin}/tool/certificate/pix/signature.png");
 
-        $elementrecord = ['pageid' => $page->get_id(), 'name' => 'Mary Jones', 'element' => 'text', 'font' => 'helveticab',
+        $elementrecord = ['pageid' => $page->get_id(), 'name' => 'Mary Jones', 'element' => 'text', 'font' => 'freesansb',
             'fontsize' => 12, 'data' => 'Mary Jones', 'colour' => '#000000', 'posx' => 141, 'posy' => 181, 'sequence' => 10,
             'refpoint' => 1];
         $element = new \tool_certificate\persistent\element(0, (object)$elementrecord);
         $element->save();
 
         $str = get_string('demotmpldirector', 'tool_certificate');
-        $elementrecord = ['pageid' => $page->get_id(), 'name' => $str, 'element' => 'text', 'font' => 'helvetica',
+        $elementrecord = ['pageid' => $page->get_id(), 'name' => $str, 'element' => 'text', 'font' => 'freesans',
             'fontsize' => 12, 'data' => $str, 'colour' => '#000000', 'posx' => 141, 'posy' => 187, 'sequence' => 11,
             'refpoint' => 1];
         $element = new \tool_certificate\persistent\element(0, (object)$elementrecord);
