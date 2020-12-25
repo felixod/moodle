@@ -67,7 +67,7 @@
         <div id="learningcontent">
 
         {{#headerlogo}}
-            <div class="headerlogo bvi-hide">
+            <div class="headerlogo">
                 <img src="{{{ headerlogo }}}" class="img-fluid" alt="Responsive image">
             </div>
         {{/headerlogo}}
@@ -75,9 +75,7 @@
         {{#hasslideshowpages}}
             {{{ output.fp_slideshow }}}
         {{/hasslideshowpages}}
-        <div class="bvi-hide">
         {{{ output.full_header }}}
-        </div>
 
         <div id="page-content" class="row pb-3">
             <div id="region-main-box" class="col-12">
@@ -94,9 +92,7 @@
                             {{{ output.course_content_header }}}
                             {{{ enrolform }}}
                             {{{ output.fp_wonderbox }}}
-                            <div class="bvi-voice">
                             {{{ output.main_content }}}
-                            </div>
                             {{{ output.fp_marketingtiles }}}
                             {{{ output.course_content_footer }}}
 
