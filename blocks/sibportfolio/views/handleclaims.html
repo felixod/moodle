@@ -1,0 +1,67 @@
+<div class="block_sibportfolio_content">
+<div style='display: inline-block;'>
+    <h3><i class="fa fa-1x fa-user-o"></i> {{ header_label }}</h3>
+</div>
+<hr class='block_sibportfolio_hr' />
+<div class='block_sibportfolio_tablediv'>
+    {% if find %}
+    <div style='text-align: center;'>
+        {{ sort_label }}:
+        {% for sort_link in sort_links %}
+        {% if is_admin or key != 2 %}
+        <a href='{{ wwwroot }}/blocks/sibportfolio/handleclaims.php?sortorder={{ sort_link.sortorder }}{% if is_admin %}&userid={{ user_id }}{% endif %}'
+           style='{{ sort_link.style }}' class='block_sibportfolio_sortlink'>{{ sort_link.caption }}</a>
+        <span></span>
+        {% endif %}
+        {% endfor %}
+    </div><br />
+    <table class='generaltable' cellpadding='5'>
+        <thead class='block_sibportfolio_gray'>
+            <tr>
+                <th>{{ user_label }}</th>
+                <th>{{ group_label }}</th>
+                <th>{{ claim_label }}</th>
+            </tr>
+        </thead>
+        <tbody id='block_sibportfolio_tablebody'>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.picture|raw }} <a href="{{ wwwroot }}/blocks/sibportfolio/userclaims.php?userid={{ user.id }}">{{ user.fullname }}</a></td>
+                <td>
+                    {% if user.groups %}
+                    {% for group in user.groups %}
+                    <span class='{% if group.curator %}block_sibportfolio_helptext{% endif %}' style='{% if not group.visible %}color: #999;{% endif %}' 
+                          help-attribute='{{ curator_label }}: {{ group.curator }}'>
+                    {{ group.name }}</span><span class='block_sibportfolio_separator'></span>
+                    {% endfor %}
+                    {% else %}—{% endif %}
+                </td>
+                <td>{{ user.count_claims }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class='notification_label'>
+        {{ not_found_label }}
+    </div>
+    {% endif %}
+</div>
+<hr class='block_sibportfolio_hr' />
+
+<div id='block_sibportfolio_pages' style='float: right;'>
+    {% for page in pages %}
+    {% if page.url %}
+    <form style='float: left;' action='{{ wwwroot }}/blocks/sibportfolio/handleclaims.php' method='get'>
+        {% if is_admin %}<input type='hidden' name='userid' value='{{ user_id }}' />{% endif %}
+        <input type='hidden' name='page' value='{{ page.caption }}' />
+        <input type='hidden' name='sortorder' value='{{ sortorder }}' />
+        <input class='block_sibportfolio_pagebtn block_sibportfolio_button' style='{{ page.style }}' type='submit' value='{{ page.caption }}'>
+    </form>
+    {% else %}
+    <button class='block_sibportfolio_button' style='float: left;' type='submit' disabled>..</button>
+    {% endif %}
+    {% endfor %}
+</div>
+
+</div>

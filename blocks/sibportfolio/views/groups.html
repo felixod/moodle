@@ -1,0 +1,88 @@
+<div class="block_sibportfolio_content">
+<div style='display: inline-block;'>
+    <h3><i class="fa fa-1x fa-users"></i> {{ header_label }}</h3>
+</div>
+<hr class='block_sibportfolio_hr' />
+<div class='block_sibportfolio_tablediv' style='padding: 1px;'>
+    <div>
+        <form action='{{ wwwroot }}/blocks/sibportfolio/groups.php' method='get'>
+            <b style='margin-right: 5px;'>{{ group_label }}</b>
+            <input class='block_sibportfolio_sortorder' type='hidden' name='sortorder' value='{{ sortorder }}' />
+            <input class='block_sibportfolio_groupname block_sibportfolio_text' type='text' name='groupname' value='{{ group_name }}' autocomplete='off' />
+            <input class='block_sibportfolio_btngroup block_sibportfolio_button' type='submit' value='{{ fgroup_label }}' />
+        </form>
+    </div>
+    <div style='text-align: center;'>
+        {{ sort_label }}:
+        <span id='block_sibportfolio_sortlinks'>
+            {% for sort_link in sort_links %}
+            <a href='{{ wwwroot }}/blocks/sibportfolio/groups.php?sortorder={{ sort_link.sortorder }}&groupname={{ group_name }}' style='{{ sort_link.style }}'
+               class='block_sibportfolio_sortlink'>{{ sort_link.caption }}</a>
+            <span></span>
+            {% endfor %}
+        </span>
+    </div><br />
+    <table cellpadding="5" class="generaltable">
+        <thead class='block_sibportfolio_gray'>
+            <tr>
+                <th>{{ group_label }}</th>
+                <th>{{ curator_label }}</th>
+                <th>{{ speciality_label }}</th>
+                <th>{{ study_label }}</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id='block_sibportfolio_tablebody'>
+            {% if find %}
+                {% for group in groups %}
+                <tr style='{% if not group.visible %}color: #999;{% endif %}'>
+                    <td>
+                        <a style='{% if not group.visible %}color: #999;{% endif %}' href='{{ wwwroot }}/cohort/assign.php?id={{ group.id }}&returnurl={{ return_url_local }}'>{{ group.name }}</a>
+                    </td>
+                    <td>
+                        {% if group.hasCurator %}
+                        <span class='{% if not group.visible %}block_sibportfolio_red{% endif %}'>{{ group.curator }}</span>
+                        <a href='{{ wwwroot }}/blocks/sibportfolio/handlers/forms/delcurator.php?groupid={{ group.id }}&returnurl={{ return_url }}'>{{ icon_delmod|raw }}</a>
+                        {% else %}
+                        {{ icon_addmod|raw }}
+                        <a style='{% if not group.visible %}color: #999;{% endif %}'
+                           href='{{ wwwroot }}/blocks/sibportfolio/handlers/forms/addcurator.php?groupid={{ group.id }}&returnurl={{ return_url }}'>{{ add_curator_label }}</a>
+                        {% endif %}
+                    </td>
+                    <td>{{ group.speciality|raw }}</td>
+                    <td>{{ group.study|raw }}</td>
+                    <td>
+                        {{ icon_editgr|raw }}
+                        <a style='{% if not group.visible %}color: #999;{% endif %}'
+                           href='{{ wwwroot }}/blocks/sibportfolio/handlers/forms/editgroup.php?groupid={{ group.id }}&returnurl={{ return_url }}'>{{ edit_group_label }}</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr><td colspan='5'>
+                    <div class='notification_label'>
+                        {{ not_found_label }}
+                    </div>
+                </td></tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+<hr class='block_sibportfolio_hr' />
+
+<div id='block_sibportfolio_pages' style='float: right;'>
+    {% for page in pages %}
+    {% if page.url %}
+    <form style='float: left;' action='{{ wwwroot }}/blocks/sibportfolio/groups.php' method='get'>
+        <input type='hidden' name='page' value='{{ page.caption }}' />
+        <input type='hidden' name='sortorder' value='{{ sortorder }}' />
+        <input type='hidden' name='groupname' value='{{ group_name }}' />
+        <input class='block_sibportfolio_pagebtn block_sibportfolio_button' style='{{ page.style }}' type='submit' value='{{ page.caption }}'>
+    </form>
+    {% else %}
+    <button class='block_sibportfolio_button' style='float: left;' type='submit' disabled>..</button>
+    {% endif %}
+    {% endfor %}
+</div>
+
+</div>

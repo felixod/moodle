@@ -1,0 +1,13 @@
+{{< core/modal }}
+    {{$title}}{{title}}{{/title}}
+    {{$body}}
+        <div class="container mw-100" >
+            <div class="content" data-id="" data-action="book_content_block">
+                <iframe id="book_iframe" style="width: 1430px;height: 732px;" crossorigin="anonymous"></iframe>
+            </div>
+        </div>
+    {{/body}}
+    {{$footer}}
+        <button type="button" class="btn btn-secondary" style="color:#174c8d;background-color:white;border-color:#4285f4;" data-action="close_button">{{#str}} cancel_str, mod_lanebs {{/str}}</button>
+    {{/footer}}
+{{/ core/modal }}

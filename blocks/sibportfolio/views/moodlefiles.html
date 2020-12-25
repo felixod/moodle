@@ -1,0 +1,118 @@
+<script type="text/javascript">
+	var jQuerySibport = jQuery.noConflict(true);
+
+	jQuerySibport(document).ready(function ($) {
+	    $('.block_sibportfolio_tablediv').hide();
+	    $s = $('.block_sibportfolio_course');
+	    $s.removeClass('block_sibportfolio_headlinktoggle');
+		$s.on('click', function() {
+		    //$s.not(this).next().slideUp('fast');
+		    $(this)
+                .toggleClass('block_sibportfolio_headlinktoggle')
+                .next()
+                .slideToggle('fast');
+		});
+	});
+</script>
+
+<div class="block_sibportfolio_content">
+<div style='display: inline-block;'>
+    <h3><i class="fa fa-2x fa-book"></i> {{ header_label }} {{ user_name }}</h3>
+</div>
+<hr class='block_sibportfolio_hr' style='margin: 0;' />
+{% if find %}
+{% for course in moodle_files %}
+<div class='block_sibportfolio_courseblock'>
+    <span class='block_sibportfolio_course block_sibportfolio_headlink block_sibportfolio_headlinktoggle'>
+        <i class="fa fa-1x fa-folder-open "></i>
+        {{ course.fullname }}
+    </span>
+    <div class='block_sibportfolio_tablediv'>
+        {% if course.assigns|length > 0 %}
+        <div class='block_sibportfolio_gray block_sibportfolio_headlinktoggle block_sibportfolio_headergrades'>
+            {{ assign_icon|raw }}<b>{{ assigns_label }}</b>
+        </div>
+        <table class='generaltable' cellpadding='5' style='margin: 0;'>
+            <thead class='block_sibportfolio_gray'>
+                <tr>
+                    <th width="20%">{{ task_label }}</th>
+                    <th width="20%">{{ files_label }}</th>
+                    <th width="10%">{{ grade_label }}</th>
+                    <th width="50%">{{ feedback_label }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for assign in course.assigns %}
+                <tr>
+                    <td>
+                        <span class='{% if is_admin and not assign.active %}block_sibportfolio_red{% endif %}'>{{ assign.name }}</span>
+                        {% if is_admin %}
+                        <a href='{{ wwwroot }}/blocks/sibportfolio/handlers/post/deletelh.php?id={{ assign.id }}'>{{ remove_icon|raw }}</a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <ul style='margin-bottom: 0;'>
+                        {% for file_url in assign.files %}
+                            <li>{{ file_url|raw }}</li>
+                        {% endfor %}
+                        </ul>
+                    </td>
+                    <td>{{ assign.finalgrade|raw }}</td>
+                    <td>
+                        {% if assign.feedback_comment|length > 0 %}
+                            {{ assign.feedback_comment|raw }}
+                        {% endif %}
+                        {% if assign.feedback_files|length > 0 %}
+                            <ul style='margin-bottom: 0;'>
+                            {% for feedback_url in assign.feedback_files %}
+                                <li>{{ feedback_url|raw }}</li>
+                            {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+        {% if course.quiz|length > 0 %}
+        <div class='block_sibportfolio_gray block_sibportfolio_headlinktoggle block_sibportfolio_headergrades'>
+            {{ quiz_icon|raw }}<b>{{ quiz_label }}</b>
+        </div>
+        <table class='generaltable' cellpadding='5' style='margin: 0;'>
+            <thead class='block_sibportfolio_gray'>
+                <tr>
+                    <th width="50%">{{ test_label }}</th>
+                    <th>{{ grade_label }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for quiz in course.quiz %}
+                <tr>
+                    <td>
+                        <span class='{% if is_admin and not quiz.active %}block_sibportfolio_red{% endif %}'>{{ quiz.name }}</span>
+                        {% if is_admin %}
+                        <a href='{{ wwwroot }}/blocks/sibportfolio/handlers/post/deletelh.php?id={{ quiz.id }}'>{{ remove_icon|raw }}</a>
+                        {% endif %}
+                    </td>
+                    <td>{{ quiz.finalgrade }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+</div>
+<hr class='block_sibportfolio_hr' style='margin: 0;' />
+{% endfor %}
+{% else %}
+<div class='notification_label'>
+    {{ not_found_label }}
+</div>
+<hr class='block_sibportfolio_hr' style='margin: 0;' />
+{% endif %}
+<div style='height: 20px'></div>
+{% if is_admin or sync_enabled %}
+{{ refresh_button|raw }}
+{% endif %}
+</div>

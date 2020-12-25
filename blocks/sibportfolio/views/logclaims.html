@@ -1,0 +1,79 @@
+<div class='block_sibportfolio_content'>
+<div style='display: inline-block;'>
+    <h3><i class="fa fa-1x fa-file-text-o"></i> {{ header_label }} {{ user_name }}</h3>
+</div>
+<hr class='block_sibportfolio_hr' />
+<div class='block_sibportfolio_tablediv'>
+    {% if find %}
+    <table class='table' cellpadding='5'>
+        <thead class='block_sibportfolio_gray'>
+            <tr>
+                <th width='15%'>{{ date_label }}</th>
+                <th>{{ desc_label }}</th>
+                <th width='20%'>{{ filename_label }}</th>
+                <th width='25'></th>
+            </tr>
+        </thead>
+        <tbody id='block_sibportfolio_tablebody'>
+            {% for item in logs %}
+            <tr class='block_sibportfolio_headlinktoggle block_sibportfolio_headlink block_sibportfolio_logbase {{ item.background }}' style='cursor: auto;'>
+                <td>{{ item.date }}</td>
+                <td>{{ item.desc }}</td>
+                <td>
+                    {% if item.bigname %}
+                    <span class='block_sibportfolio_helptext' help-attribute='{{ item.filename|raw }}'>{{ item.fileinfo|raw }}</span>
+                    {% else %}
+                    <span>{{ item.fileinfo|raw }}</span>
+                    {% endif %}
+                </td>
+                <td><div class='block_sibportfolio_moreinfo block_sibportfolio_showmore' title='{{ more_label }}' style='cursor: pointer;'></div></td>
+            </tr>
+            <tr class='block_sibportfolio_logmore'>
+                <td class='block_sibportfolio_logdata'>{{ type_label }}</td>
+                <td colspan='3'><img height='20' width='20' src='{{ wwwroot }}/blocks/sibportfolio/pix/{{ item.icon }}.png'> {{ item.type }}</td>
+            </tr>
+            <tr class='block_sibportfolio_logmore'>
+                <td class='block_sibportfolio_logdata'>{{ status_label }}</td>
+                <td colspan='3'><img src='{{ wwwroot }}/blocks/sibportfolio/pix/{{ item.statusicon }}.png'> {{ item.status }}</td>
+            </tr>
+            <tr class='block_sibportfolio_logmore'>
+                <td class='block_sibportfolio_logdata'>{{ curator_label }}</td>
+                <td colspan='3'>{{ item.curator }}</td>
+            </tr>
+            <tr class='block_sibportfolio_logmore'>
+                <td class='block_sibportfolio_logdata'>{{ usercomment_label }}</td>
+                <td colspan='3'>{{ item.usercomment }}</td>
+            </tr>
+            <tr class='block_sibportfolio_logmore'>
+                <td class='block_sibportfolio_logdata'>{{ comment_label }}</td>
+                <td colspan='3'>{{ item.comment }}</td>
+            </tr>
+            <tr>
+                <td colspan='4'><div style='border-bottom: 2px solid silver'></div></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class='notification_label'>
+        {{ not_found_label }}
+    </div>
+    {% endif %}
+</div>
+<hr class='block_sibportfolio_hr' />
+
+<div id='block_sibportfolio_pages' style='float: right;'>
+    {% for page in pages %}
+    {% if page.url %}
+    <form style='float: left;' action='{{ wwwroot }}/blocks/sibportfolio/logclaims.php' method='get'>
+        <input type='hidden' name='userid' value='{{ user_id }}' />
+        <input type='hidden' name='page' value='{{ page.caption }}' />
+        <input class='block_sibportfolio_pagebtn block_sibportfolio_button' style='{{ page.style }}' type='submit' value='{{ page.caption }}'>
+    </form>
+    {% else %}
+    <button class='block_sibportfolio_button' style='float: left;' type='submit' disabled>..</button>
+    {% endif %}
+    {% endfor %}
+</div>
+
+</div>

@@ -1,0 +1,64 @@
+<div class="block_sibportfolio_content">
+<div style='display: inline-block;'>
+    <h3><i class="fa fa-1x fa-users"></i> {{ header_label }}<span class='block_sibportfolio_gname'> {{ current_group }}</span></h3>
+</div>
+{% if notification_message %}<div class='alert {{ notification_type }}'>{{ notification_message }}</div>{% endif %}
+<hr class='block_sibportfolio_hr' />
+<form action='{{ wwwroot }}/blocks/sibportfolio/users.php' method='get'>
+    <b style='margin-right: 5px;'>{{ group_label }}</b>
+    <input class='block_sibportfolio_groupname block_sibportfolio_text' type='text' name='groupname' value='{{ group_name }}' autocomplete='off' />
+    <input class='block_sibportfolio_btngroup' type='submit' value='{{ fgroup_label }}' />
+    <select class='block_sibportfolio_text' name='groupid'>
+        {% for group in groups %}
+        <option value='{{ group.id }}' {{ group.selected }}>{{ group.name }}</option>
+        {% endfor %}
+    </select>
+    <input class='block_sibportfolio_btngroup block_sibportfolio_button' type='submit' value='{{ groupid_label }}' />
+</form>
+<form action='{{ wwwroot }}/blocks/sibportfolio/users.php' method='post'>
+    <div class='block_sibportfolio_tablediv' style='padding: 1px;'>
+        <input type='hidden' name='groupid' value='{{ group_id }}' />
+        <input type='hidden' name='groupname' value='{{ group_name }}' />
+        <input type='hidden' name='page' value='{{ current_page }}' />
+        <input type='hidden' name='sesskey' value='{{ sesskey }}' />
+        <table class='generaltable' cellpadding='5'>
+            <thead class='block_sibportfolio_gray'>
+                <tr>
+                    <th>{{ username_label }}</th>
+                    <th>{{ record_label }}</th>
+                    <th>{{ speciality_label }}</th>
+                    <th>{{ study_label }}</th>
+                </tr>
+            </thead>
+            <tbody id='block_sibportfolio_tablebody'>
+                {% for user in users %}
+                <tr>
+                    <td><a href='{{ wwwroot }}/blocks/sibportfolio/index.php?userid={{ user.userid }}' target='_blank'>{{ user.username }}</a></td>
+                    <td><input class='block_sibportfolio_text' type='text' name='numbers[{{ user.userid }}]' value='{{ user.number }}' autocomplete='off' size='10' style='margin: 0;' /></td>
+                    <td><input class='block_sibportfolio_text' type='text' name='specialties[{{ user.userid }}]' value='{{ user.speciality }}' placeholder='{{ phspeciality }}' autocomplete='off' size='20' style='margin: 0;' /></td>
+                    <td><input class='block_sibportfolio_text' type='text' name='studies[{{ user.userid }}]' value='{{ user.study }}' placeholder='{{ phstudy }}' autocomplete='off' size='10' style='margin: 0;' /></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <input class='form-submit block_sibportfolio_button' type='submit' name='editRec' value='{{ edit_users_label }}' style='{% if users|length == 0 %}display: none;{% endif %}' />
+</form>
+<hr class='block_sibportfolio_hr' />
+
+<div id='block_sibportfolio_pages' style='float: right;'>
+    {% for page in pages %}
+    {% if page.url %}
+    <form style='float: left;' action='{{ wwwroot }}/blocks/sibportfolio/users.php' method='get'>
+        <input type='hidden' name='page' value='{{ page.caption }}' />
+        <input type='hidden' name='groupname' value='{{ group_name }}' />
+        <input type='hidden' name='groupid' value='{{ group_id }}' />
+        <input class='block_sibportfolio_pagebtn block_sibportfolio_button' style='{{ page.style }}' type='submit' value='{{ page.caption }}'>
+    </form>
+    {% else %}
+    <button class='block_sibportfolio_button' style='float: left;' type='submit' disabled>..</button>
+    {% endif %}
+    {% endfor %}
+</div>
+
+</div>

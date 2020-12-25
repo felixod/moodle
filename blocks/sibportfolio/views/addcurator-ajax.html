@@ -1,0 +1,42 @@
+<script type="text/javascript">
+	var jQuerySibport = jQuery.noConflict(true);
+	
+	jQuerySibport(document).ready(function ($) {
+		var delay = (function () {
+			var timer = 0;
+			return function (callback, ms) {
+				clearTimeout (timer);
+				timer = setTimeout(callback, ms);
+			};
+		})();
+	
+		var send_ajax = function (httpMethod, callback, url, reqData) {
+			$.ajax({
+				url: url, 
+				type: httpMethod, 
+				success: callback, 
+				data: reqData,
+				dataType: "json",
+				timeout: 10000
+			});
+		}
+	
+		var process_data = function (data) {
+			var target = $('#id_curator');
+			target.empty();
+			for (var i = 0; i < data.length; i++) {
+				var person = data[i];		
+				target.append('<option value="' + person.id +'">' + person.fullname + '</option>');
+			}
+		}
+	
+		$('#id_findbutton').hide();
+		$('#id_user').keyup(function () {
+			delay(function(){
+					send_ajax('get', process_data, '{{ wwwroot }}/blocks/sibportfolio/handlers/ajax/finduser.php', $("form").serialize())
+				}, 
+				500 
+			);
+		});
+	});
+</script>

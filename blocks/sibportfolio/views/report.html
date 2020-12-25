@@ -1,0 +1,101 @@
+<div class='block_sibportfolio_content'>
+<div style='display: inline-block;'>
+    <h3><i class="fa fa-1x fa-file-text-o"></i> {{ header_label }}</h3>
+</div>
+<hr class='block_sibportfolio_hr' />
+<div class='block_sibportfolio_tablediv' style='padding: 1px;'>
+    {{ export|raw }}
+    <div>
+        <form action='{{ wwwroot }}/blocks/sibportfolio/report.php' method='get'>
+            <b style='margin-right: 5px;'>{{ curator_label }}</b>
+            <input class='block_sibportfolio_sortorder' type='hidden' name='sortorder' value='{{ sortorder }}' />
+            <input class='block_sibportfolio_user block_sibportfolio_text' type='text' name='user' value='{{ user_name }}' autocomplete='off' />
+            <input class='block_sibportfolio_btnuser block_sibportfolio_button' type='submit' value='{{ fuser_label }}' />
+        </form>
+    </div>
+    <div style='text-align: center;'>
+        {{ sort_label }}:
+        <span id='block_sibportfolio_sortlinks'>
+            {% for key, sort_link in sort_links %}
+            <a href='{{ wwwroot }}/blocks/sibportfolio/report.php?sortorder={{ sort_link.sortorder }}&user={{ user_name }}'
+               style='{{ sort_link.style }}' class='block_sibportfolio_sortlink'>{{ sort_link.caption }}</a>
+            <span></span>
+            {% endfor %}
+        </span>
+    </div><br />
+    <table class='table block_sibportfolio_report' cellpadding='5'>
+        <thead class='block_sibportfolio_gray'>
+            <tr>
+                <th>{{ curator_label }}</th>
+                <th>{{ last_access_label }}</th>
+                <th>{{ claims_label }}</th>
+                <th width='25'></th>
+            </tr>
+        </thead>
+        <tbody id='block_sibportfolio_tablebody'>
+            {% if find %}
+                {% for curator in curators %}
+                <tr class='block_sibportfolio_lightgray' style='{% if curator.find %}border: 2px solid black;{% endif %}'>
+                    <td><a href='{{ wwwroot }}/blocks/sibportfolio/index.php?userid={{ curator.id }}' target='_blank'>{{ curator.name }}</a></td>
+                    <td>{{ curator.laccess }}</td>
+                    <td><a href='{{ wwwroot }}/blocks/sibportfolio/handleclaims.php?userid={{ curator.id }}' target='_blank'>{{ curator.claims }}</a></td>
+                    <td><div class='block_sibportfolio_moreinfo block_sibportfolio_showmore' title='{{ more_label }}' style='cursor: pointer;'></div></td>
+                </tr>
+                <tr class='block_sibportfolio_blockmore'><td colspan='4' style='padding: 0;'>
+                    <div style='border: 2px solid #ebebeb; border-top: none; margin-bottom: 10px; margin-left: 3px; margin-right: 3px;'>
+                        <table class='generaltable' cellpadding='5' style='margin: 0;'>
+                            <thead>
+                                <tr>
+                                    <th>{{ group_label }}</th>
+                                    <th width='25%'>{{ count_users_label }}</th>
+                                    <th width='25%'>{{ percent_label }}</th>
+                                    <th width='25%'>{{ empty_label }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for group in curator.groups %}
+                                <tr style='{% if not group.visible %}color: #999;{% endif %}'>
+                                    <td>
+                                        <a style='{% if not group.visible %}color: #999;{% endif %}' href='{{ wwwroot }}/blocks/sibportfolio/ureport.php?groupid={{ group.id }}' target='_blank'>
+                                            {{ group.name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ group.count_users }}</td>
+                                    <td>{{ group.percent_filled }}%</td>
+                                    <td>{{ group.count_empty }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </td></tr>
+                <tr><td colspan='4' style='padding: 1px;'></td></tr>
+                {% endfor %}
+            {% else %}
+                <tr><td colspan='4'>
+                    <div class='notification_label'>
+                        {{ not_found_label }}
+                    </div>
+                </td></tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+<hr class='block_sibportfolio_hr' />
+
+<div id='block_sibportfolio_pages' style='float: right;'>
+    {% for page in pages %}
+    {% if page.url %}
+    <form style='float: left;' action='{{ wwwroot }}/blocks/sibportfolio/report.php' method='get'>
+        <input type='hidden' name='page' value='{{ page.caption }}' />
+        <input type='hidden' name='sortorder' value='{{ sortorder }}' />
+        <input type='hidden' name='user' value='{{ user_name }}' />
+        <input class='block_sibportfolio_pagebtn block_sibportfolio_button' style='{{ page.style }}' type='submit' value='{{ page.caption }}'>
+    </form>
+    {% else %}
+    <button class='block_sibportfolio_button' style='float: left;' type='submit' disabled>..</button>
+    {% endif %}
+    {% endfor %}
+</div>
+
+</div>

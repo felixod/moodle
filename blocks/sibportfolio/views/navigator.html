@@ -1,0 +1,28 @@
+<div class="block block_sibportfolio_leftpanel">
+    <div class="header block_sibportfolio_header"><h2>{{ menu_label }}</h2></div>
+	<a href="{{ wwwroot }}/blocks/sibportfolio/index.php">{{ profile_label }}</a><br />
+    {% if not is_admin and not is_curator %}
+    <a href="{{ wwwroot }}/blocks/sibportfolio/userclaims.php">{{ app_label }}</a><br />
+    {% endif %}
+    <hr style="margin: 5px 0;" />
+    <a href="{{ wwwroot }}/blocks/sibportfolio/handlers/forms/finduser.php?returnurl={{ return_url }}">{{ users_label }}</a><br />
+    {% if is_admin %}
+    <a href="{{ wwwroot }}/blocks/sibportfolio/report.php">{{ report_label }}</a><br />
+    {% endif %}
+    {% if is_viewer or is_curator %}
+    <a href="{{ wwwroot }}/blocks/sibportfolio/ureport.php">{{ ureport_label }}</a><br />
+    {% endif %}  
+    {% if not is_admin and not is_curator %}
+    <a href="{{ wwwroot }}/blocks/sibportfolio/logclaims.php">{{ log_label }}</a><br />
+    {% endif %}
+    {% if is_admin or is_curator %}
+    <a href="{{ wwwroot }}/blocks/sibportfolio/handleclaims.php" class="block_sibportfolio_control">{{ appv_label }}</a>
+    <span class='block_sibportfolio_notify'>{{ count_claims }}</span><br />
+    {% endif %}
+    {% if is_admin %}
+    <hr style="margin: 5px 0;" />
+    <a href="{{ wwwroot }}/blocks/sibportfolio/groups.php" class="block_sibportfolio_control">{{ groups_label }}</a><br />
+    <a href="{{ wwwroot }}/blocks/sibportfolio/users.php" class="block_sibportfolio_control">{{ records_label }}</a><br />
+    <a href="{{ wwwroot }}/blocks/sibportfolio/categories.php" class="block_sibportfolio_control">{{ categories_label }}</a><br />
+    {% endif %}
+</div>

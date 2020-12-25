@@ -1,0 +1,62 @@
+<div class="block_sibportfolio_content">
+<div style='display: inline-block; border: 2px solid silver;' class='block_sibportfolio_profile'>
+    <div style='font-size: 16pt; padding: 5px; background-color: lightgray;'>
+        {% if is_curator %}{{ icon_moderator|raw }}{% endif %}
+        <b> {{ user_name }}</b>
+    </div>
+    <div style='background: linear-gradient(to right, #ddd, #fbfbfb);'>
+        <table class='table' style='margin: 0;'>
+            <tr>
+                <th rowspan='4' style='padding: 0; border-top: none; border-right: 2px solid lightgray;'>{{ user_picture|raw }}</th>
+                <th style='min-width: 190px; border-top: none;' class='block_sibportfolio_gray'><b>{{ group_label }}</b></th>
+                {% if groups_info is iterable %}
+                {% for group in groups_info %}
+                <th style='text-align: center; min-width: 150px; border-top: none;' class='block_sibportfolio_gray'>
+                    <span class='block_sibportfolio_helptext' help-attribute='{{ curator_name_label }}: {{ group.curator }}'>{{ group.name }}</span>
+                    {% if group.curatorid %}
+                    <a href='{{ wwwroot }}/message/index.php?id={{ group.curatorid }}' target='_blank'>{{ icon_messages|raw }}</a>
+                    {% endif %}
+                </th>
+                {% endfor %}
+                {% else %}
+                <th style='text-align: center; min-width: 150px; border-top: none;' class='block_sibportfolio_gray'>{{ groups_info }}</th>
+                {% endif %}
+            </tr>
+            <tr>
+                <td><b>{{ record_label }}</b></td>
+                {% if groups_info is iterable %}
+                {% for group in groups_info %}
+                <td style='text-align: center; border-left: 1px solid #ddd;'><i>{{ group.record }}</i></td>
+                {% endfor %}
+                {% else %}
+                <td style='text-align: center; border-left: 1px solid #ddd;'>—</td>
+                {% endif %}
+            </tr>
+            <tr>
+                <td><b>{{ speciality_label }}</b></td>
+                {% if groups_info is iterable %}
+                {% for group in groups_info %}
+                <td style='text-align: center; border-left: 1px solid #ddd;'><i>{{ group.speciality }}</i></td>
+                {% endfor %}
+                {% else %}
+                <td style='text-align: center; border-left: 1px solid #ddd;'>—</td>
+                {% endif %}
+            </tr>
+            <tr>
+                <td><b>{{ study_label }}</b></td>
+                {% if groups_info is iterable %}
+                {% for group in groups_info %}
+                <td style='text-align: center; border-left: 1px solid #ddd;'><i>{{ group.study }}</i></td>
+                {% endfor %}
+                {% else %}
+                <td style='text-align: center; border-left: 1px solid #ddd;'>—</td>
+                {% endif %}
+            </tr>
+        </table>
+    </div>
+</div>
+
+<div class='block_sibportfolio_headlinktoggle block_sibportfolio_files'>{{ view_samgups_label }}</div>
+<div class='block_sibportfolio_tablediv'>
+<center>{{ view_samgups_plan | raw}}</center>
+</div>

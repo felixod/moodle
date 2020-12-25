@@ -1,0 +1,78 @@
+<div class="block_sibportfolio_content">
+<div style='display: inline-block;'>
+    <h3><i class="fa fa-1x fa-file-text-o"></i> {{ header_label }}<span class='block_sibportfolio_gname'> {{ current_group }}</span></h3>
+</div>
+<hr class='block_sibportfolio_hr' />
+<form action='{{ wwwroot }}/blocks/sibportfolio/ureport.php' method='get'>
+    <b style='margin-right: 5px;'>{{ group_label }}</b>
+    <input class='block_sibportfolio_groupname block_sibportfolio_text' type='text' name='groupname' value='{{ group_name }}' autocomplete='off' />
+    <input class='block_sibportfolio_btngroup block_sibportfolio_button' type='submit' value='{{ fgroup_label }}' />
+    <select class='block_sibportfolio_text' name='groupid'>
+        {% for group in groups %}
+        <option value='{{ group.id }}' {{ group.selected }}>{{ group.name }}</option>
+        {% endfor %}
+    </select>
+    <input class='block_sibportfolio_btngroup block_sibportfolio_button' type='submit' value='{{ groupid_label }}' />
+</form>
+<table align='center' style='margin-top: 5px;'>
+    <tbody id="block_sibportfolio_tableinfo">
+        {% if group_id > 0 %}
+        <tr>
+            <td class='block_sibportfolio_cell'><b>{{ count_users_label }}: </b>{{ count_users }}</td>
+            <td class='block_sibportfolio_cell'><b>{{ percent_label }}: </b>{{ percent_filled }}%</td>
+            <td class='block_sibportfolio_cell'><b>{{ empty_label }}: </b>{{ count_empty }}</td>
+        </tr>
+        {% endif %}
+    </tbody>
+</table>
+<div class='block_sibportfolio_tablediv' style='padding: 1px;'>
+	<table class='table block_sibportfolio_ureport' cellpadding='5'>
+        <thead id='block_sibportfolio_tablehead'>
+            <tr>
+                {% for category in categories %}
+                <th><a href='{{ wwwroot }}/blocks/sibportfolio/ureport.php?sortorder={{ category.id }}&dir={{ category.dir }}&groupname={{ group_name }}&groupid={{ group_id }}'
+                       class='block_sibportfolio_sortlink'>{{ category.name }}</a> {{ category.tag|raw }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+		<tbody id='block_sibportfolio_tablebody'>
+            {% for item in report %}
+            <tr>
+                <td>{{ item.picture|raw }}&nbsp;<a href='{{ wwwroot }}/blocks/sibportfolio/index.php?userid={{ item.userid }}'
+                                                   target='_blank'>{{ item.username }}</a>&nbsp;{{ item.count_claims|raw }}</td>
+                {% for catid, catcount in item.categories %}
+                <td class='{% if catcount == 0 %}block_sibportfolio_red{% else %}block_sibportfolio_green{% endif %}'>
+                    <a href='{{ wwwroot }}/blocks/sibportfolio/userfiles.php?userid={{ item.userid }}&categoryid={{ attribute(categories, catid + 1).id }}' target='_blank'>{{ catcount }}</a>
+                </td>
+                {% endfor %}
+                <td class='{% if item.allFiles == 0 %}block_sibportfolio_red{% else %}block_sibportfolio_green{% endif %}'>{{ item.allFiles }}</td>
+            </tr>
+            {% endfor %}
+            <tr class='block_sibportfolio_gray'>
+                {% for item in total %}
+                <td><b>{{ item }}</b></td>
+                {% endfor %}
+            </tr>
+		</tbody>
+	</table>
+</div>
+<hr class='block_sibportfolio_hr' />
+
+<div id='block_sibportfolio_pages' style='float: right;'>
+    {% for page in pages %}
+    {% if page.url %}
+    <form style='float: left;' action='{{ wwwroot }}/blocks/sibportfolio/ureport.php' method='get'>
+        <input type='hidden' name='page' value='{{ page.caption }}' />
+        <input type='hidden' name='sortorder' value='{{ sortorder }}' />
+        <input type='hidden' name='dir' value='{{ direction }}' />
+        <input type='hidden' name='groupname' value='{{ group_name }}' />
+        <input type='hidden' name='groupid' value='{{ group_id }}' />
+        <input class='block_sibportfolio_pagebtn block_sibportfolio_button' style='{{ page.style }}' type='submit' value='{{ page.caption }}'>
+    </form>
+    {% else %}
+    <button class='block_sibportfolio_button' style='float: left;' type='submit' disabled>..</button>
+    {% endif %}
+    {% endfor %}
+</div>
+
+</div>

@@ -1,0 +1,10 @@
+{
+    "name": "moodle-atto_latexvh-button",
+    "builds": {
+        "moodle-atto_latexvh-button": {
+            "jsfiles": [
+                "button.js"
+            ]
+        }
+    }
+}
