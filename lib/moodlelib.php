@@ -4607,8 +4607,11 @@ function authenticate_user_login($username, $password, $ignorelockout=false, &$f
                 error_log('[client '.getremoteaddr()."]  $CFG->wwwroot  Unknown user, can not create new accounts:  $username  ".
                         $_SERVER['HTTP_USER_AGENT']);
                 return false;
-            } else {
-                $user = create_user_record($username, $password, $auth);
+            } else {                
+                // Felixod. Проверять перед созданием, что пользователя еще нет (2020.07.10)
+                if (!$user = $DB->get_record('user', array('username'=>$username, 'mnethostid'=>$CFG->mnet_localhost_id))) {
+                    $user = create_user_record($username, $password, $auth);
+                }
             }
         }
 

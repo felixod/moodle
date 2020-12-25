@@ -27,11 +27,18 @@
 defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->libdir.'/authlib.php');
+require_once($CFG->dirroot.'/user/lib.php');
 
 /**
  * External database authentication plugin.
  */
 class auth_plugin_db extends auth_plugin_base {
+
+    // Felixod 
+    const SOAP_LOGIN    = 'web'; //логин пользователя к базе 1С
+    const SOAP_PASSWORD = '5bi$dlyF'; //пароль пользователя к базе 1С
+    const SOAP_CLIENT   = 'https://1c.samgups.ru/univer/ws/dekanat?wsdl';
+    const SOAP_MOUNTPATH = '/mnt/univer/';
 
     /**
      * Constructor.
@@ -46,6 +53,88 @@ class auth_plugin_db extends auth_plugin_base {
         if (empty($this->config->extencoding)) {
             $this->config->extencoding = 'utf-8';
         }
+    }
+
+    /**
+    * Функция устанавливает SOAP соединение с 1С: Университет
+    * 
+    * @return array    Возвращает массив с объектом веб-сервиса.
+    */
+
+    function soap_1c_connector () {
+        // Необходимо отключить кэширование для SOAP. Если этого не сделать, 
+        // функции веб-сервисов будут работать некорректно.    
+        ini_set('soap.wsdl_cache_enabled', 0 );
+        ini_set('soap.wsdl_cache_ttl', 0); 
+        try {
+            $client = new SoapClient(self::SOAP_CLIENT,
+            array(
+                'login' => self::SOAP_LOGIN, //логин пользователя к базе 1С
+                'password' => self::SOAP_PASSWORD, //пароль пользователя к базе 1С
+                'soap_version' => SOAP_1_2, //версия SOAP
+                'cache_wsdl' => WSDL_CACHE_NONE,
+                'trace' => true,
+                'features' => SOAP_USE_XSI_ARRAY_TYPE
+            )
+        );
+        return $client;
+        } catch (Exception $e) {
+            debugging('Выброшено исключение: ',  $e->getMessage(), "\n");
+            return null;
+        }
+    }
+
+    /**
+    * Функция проверяет что пользователь заходит меньше минуты назад в ЭИОС
+    *
+    * @param  array   $user массив с параметрами пользователя
+    * @return bool    Возвращает метку на успех операции обновления.
+    */
+    function get_lastlogin_day ($user) {
+        if (!property_exists($user, 'currentlogin')) {
+            // Если нету пользователя, то можно и обновить сразу
+            return true;
+        }
+        $currentlogin = $user->currentlogin; // Текущий вход
+        $lastlogin = $user->lastlogin; // Последний вход
+        $lastlogin2h = strtotime("now +1 minutes", $lastlogin); // Время просрочки информации +1 минута
+        // Если время последнего входа больше на два часа, чем текущее возвращаем истину
+        if ($currentlogin > $lastlogin2h) {
+            return true;
+        } else {
+            return false;
+        }    
+    }
+
+    /**
+    * Функция создает учетную запись в домене stud.samgups.ru 
+    * с использованием данных из 1С: Университет
+    *
+    * @param  string  $id1c     Идентификатор 1С
+    * @param  string  $username Имя пользователя
+    * @param  string  $password Пароль
+    * @return bool    Возвращает метку на успех операции обновления.
+    */
+    function get_create_students_in_domain ($id1c, $username, $password, $fcommand) {
+        //Подключаемся к веб-сервисам 1С: Университет
+        $client = self::soap_1c_connector (); 
+        // Если не удалость подключиться к веб-сервису - откючиться!
+        if (is_null($client)) {
+            return false;
+        }
+        //Заполним массив передаваемых параметров
+        $params["id"] = $id1c; 
+        $params["Login"] = $username;
+        $params["Password"] = $password;
+        $params["fCommand"] = $fcommand;
+        
+        //Выполняем операцию
+        //GetCreateStudentsInDomain - это метод веб-сервиса 1С, который описан в конфигурации.
+        $result = $client->GetCreateStudentsInDomain($params); 
+        //Обработаем возвращаемый результат
+        $jsResult = $result->return;
+        $dataResult = json_decode($jsResult);
+        return (bool)$dataResult;
     }
 
     /**
@@ -137,12 +226,97 @@ class auth_plugin_db extends auth_plugin_base {
             } else if ($this->config->passtype === 'sha1') {
                 return (strtolower($fromdb) == sha1($extpassword));
             } else if ($this->config->passtype === 'saltedcrypt') {
-                return password_verify($extpassword, $fromdb);
+                $return = false;
+                if (password_verify($extpassword, $fromdb)) {
+                    //Felixod
+                    $user = $DB->get_record('user', array('username'=>$username, 'mnethostid'=>$CFG->mnet_localhost_id, 'auth'=>$this->authtype));  
+                    // Обновляем информацию каждую минуту
+                    if ($this->get_lastlogin_day($user)) {
+                        // Создаем учетную запись в домене stud.samgups.ru
+                        $authdbnum = $this->db_init();
+                        // Важно! Получаем idnumber 
+                        $rsnum = $authdbnum->Execute("SELECT {$this->config->field_map_idnumber}
+                            FROM {$this->config->table}
+                            WHERE {$this->config->fielduser} = '".$this->ext_addslashes($extusername)."'");
+                        if ($rsnum) {
+                            $fieldsnum = array_change_key_case($rsnum->fields, CASE_LOWER);
+                            // Получаем код 1С из внешней базы данных
+                            $idnumber = $fieldsnum[strtolower($this->config->field_map_idnumber)];
+                            $rsnum->Close();
+                            $authdbnum->Close();
+                            if (!is_null($idnumber)) {
+                                // Получаем код 1с и если он есть, регистрируем студента
+                                // Создаем учетную запись в домене stud.samgups.ru
+                                if ($this->get_create_students_in_domain($idnumber, ltrim($idnumber,'0'), $password, 1)) {
+                                    // Если учетная запись была создана успешно в домене,
+                                    // обновляем адрес почты на новый (login@stud.samgups.ru)
+                                    if (property_exists($user, 'email')) {
+                                        // Если пользователь уже есть и он есть в домене, обновляем почту в Moodle
+                                        if ($user->email !== strtolower(ltrim($idnumber,'0').'@stud.samgups.ru')) {
+                                            $updateuser = new stdClass();
+                                            $updateuser->id    = $user->id;
+                                            $updateuser->email = strtolower(ltrim($idnumber,'0').'@stud.samgups.ru');
+                                            user_update_user($updateuser, false);
+                                        }
+                                    }
+
+                                }
+                            }
+                        }
+                    }
+                    $return = true;
+                }
+		        return $return;
             } else {
                 return false;
             }
 
         }
+    }
+    
+    /**
+     * Если пользователь найден во внешней базе данных,
+     * получаем идентификатор 1с из внешней базы данных
+     *
+     * @param  string  $username Имя пользователя
+     * @param  string  $password Пароль
+     * @return string  Возвращает идентификатор 1С студента из внешней базы.
+     */
+
+    function user_outdb_id1c ($username, $password) {
+        global $CFG, $DB, $USER;
+
+        $extusername = core_text::convert($username, 'utf-8', $this->config->extencoding);
+        $extpassword = core_text::convert($password, 'utf-8', $this->config->extencoding);
+
+        $user = $DB->get_record('user', array('username' => $username));
+        // Если код идентификатора установлен, завершить выполнение процедуры
+        if (!empty($user->idnumber)) { 
+            return $user->idnumber; 
+        }
+        
+        //Костыль подключения к внешней базе данных
+        $authdb = $this->db_init();
+
+        $rs = $authdb->Execute("SELECT id1c
+                                  FROM {$this->config->table}
+                                 WHERE {$this->config->fielduser} = '".$this->ext_addslashes($extusername)."'");
+        if (!$rs) {
+            $authdb->Close();
+            debugging(get_string('auth_dbcantconnect','auth_db'));
+            return false;
+        }
+
+        if ($rs->EOF) {
+            $authdb->Close();
+            return false;
+        }
+
+        $fields = array_change_key_case($rs->fields, CASE_LOWER);
+        $idnumber = $fields[strtolower('id1c')];
+        $rs->Close();
+        $authdb->Close();
+        return $idnumber;
     }
 
     /**
@@ -454,7 +628,9 @@ class auth_plugin_db extends auth_plugin_base {
                 $user->confirmed  = 1;
                 $user->auth       = $this->authtype;
                 $user->mnethostid = $CFG->mnet_localhost_id;
-
+                if (empty($user->lang)) {
+                    $user->lang = $CFG->lang;
+                }
                 if ($collision = $DB->get_record_select('user', "username = :username AND mnethostid = :mnethostid AND auth <> :auth", array('username'=>$user->username, 'mnethostid'=>$CFG->mnet_localhost_id, 'auth'=>$this->authtype), 'id,username,auth')) {
                     $trace->output(get_string('auth_dbinsertuserduplicate', 'auth_db', array('username'=>$user->username, 'auth'=>$collision->auth)), 1);
                     continue;
