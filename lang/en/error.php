@@ -203,7 +203,7 @@ $string['csvloaderror'] = 'An error occurred while loading the CSV file: {$a}';
 $string['csvnodata'] = 'Invalid CSV file - The CSV file has headers but does not contain any data.';
 $string['csvweirdcolumns'] = 'Invalid CSV file format - number of columns is not constant!';
 $string['dbconnectionfailed'] = '<p>Ошибка: Ошибка подключения к базе данных</p>
-<p>В настоящее время ведуться профилактические работы с сервером базы данных ЭИОС СамГУПС.</p>
+<p>В настоящее время ведутся профилактические работы в ЭИОС СамГУПС.</p>
 <p>Работы направлены на повышение надежности и скорости доступа к данным сервисов ЭИОС. Примерное время профилактических работ: около 3 часов.</p>';
 $string['dbdriverproblem'] = '<p>Error: database driver problem detected</p>
 <p>The site administrator should verify server configuration</p><p>{$a}</p>';
