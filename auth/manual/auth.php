@@ -403,7 +403,7 @@ class auth_plugin_manual extends auth_plugin_base {
         $params["status"] = false; // Выводить список всех групп
         //Выполняем операцию
         //$result = $client->GetAllGroupByStudID($params); //GetAllGroupByStudID - это метод веб-сервиса 1С, который описан в конфигурации.
-        $result = $client->GetGroupByIdForLms($id1c); //GetAllGroupByStudID - это метод веб-сервиса 1С, который описан в конфигурации.
+        $result = $client->GetGroupByIdForLms($params); //GetAllGroupByStudID - это метод веб-сервиса 1С, который описан в конфигурации.
         //Обработаем возвращаемый результат
         $jsResult = $result->return;      
         if (property_exists($jsResult, 'uni8array')) {
