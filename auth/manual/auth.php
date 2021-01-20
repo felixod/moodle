@@ -186,7 +186,7 @@ class auth_plugin_manual extends auth_plugin_base {
     }
 
     /**
-    * Функция проверяет что пользователь заходит меньше суток назад в ЭИОС
+    * Функция проверяет что пользователь заходит меньше 1 минуты назад в ЭИОС
     *
     * @param  array   $user массив с параметрами пользователя
     * @return bool    Возвращает метку на успех операции обновления.
@@ -194,9 +194,9 @@ class auth_plugin_manual extends auth_plugin_base {
     function get_lastlogin_day ($user) {
         $currentlogin = $user->currentlogin; // Текущий вход
         $lastlogin = $user->lastlogin; // Последний вход
-        $lastlogin2h = strtotime("+2 hours", $lastlogin); // Время просрочки информации +2 часа
+        $lastlogin1m = strtotime("+1 mins", $lastlogin); // Время просрочки информации +1 минута
         // Если время последнего входа больше на два часа, чем текущее возвращаем истину
-        if ($currentlogin > $lastlogin2h) {
+        if ($currentlogin > $lastlogin1m) {
             return true;
         } else {
             return false;
@@ -402,7 +402,8 @@ class auth_plugin_manual extends auth_plugin_base {
         $params["studid"] = $id1c;
         $params["status"] = false; // Выводить список всех групп
         //Выполняем операцию
-        $result = $client->GetAllGroupByStudID($params); //GetAllGroupByStudID - это метод веб-сервиса 1С, который описан в конфигурации.
+        //$result = $client->GetAllGroupByStudID($params); //GetAllGroupByStudID - это метод веб-сервиса 1С, который описан в конфигурации.
+        $result = $client->GetGroupByIdForLms($id1c); //GetAllGroupByStudID - это метод веб-сервиса 1С, который описан в конфигурации.
         //Обработаем возвращаемый результат
         $jsResult = $result->return;      
         if (property_exists($jsResult, 'uni8array')) {
