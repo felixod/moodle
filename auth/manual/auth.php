@@ -453,13 +453,13 @@ class auth_plugin_manual extends auth_plugin_base {
             }
             if (!cohort_is_member($cohort->id, $user->id)) {
                 // Пользователь не член глобальной группы
-                if ($array->p0 = 1) {
+                if ((int)$array->p0 == 1) {
                     // Состоит в группе
                     cohort_add_member($cohort->id, $user->id); 
                 }
             }
             else {
-                if ($array->p0 = 0) {
+                if ((int)$array->p0 == 0) {
                     // Не состоит в группе, удаляем
                     cohort_remove_member($cohort->id, $user->id); 
                 }
