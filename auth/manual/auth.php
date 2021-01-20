@@ -438,7 +438,6 @@ class auth_plugin_manual extends auth_plugin_base {
 		//p0 = Строка(Состояние);
 		//p1 = Строка(Группа);
         //p2 = Строка(ЗачетнаяКнига);
-        //p6 = Строка (Активность)
         global $DB;
         if (!empty($array->p1)) {
             $cohort = $DB->get_record('cohort', ['idnumber' => $array->p1]);
@@ -454,13 +453,13 @@ class auth_plugin_manual extends auth_plugin_base {
             }
             if (!cohort_is_member($cohort->id, $user->id)) {
                 // Пользователь не член глобальной группы
-                if ($array->p6 = 1) {
+                if ($array->p0 = 1) {
                     // Состоит в группе
                     cohort_add_member($cohort->id, $user->id); 
                 }
             }
             else {
-                if ($array->p6 = 0) {
+                if ($array->p0 = 0) {
                     // Не состоит в группе, удаляем
                     cohort_remove_member($cohort->id, $user->id); 
                 }
