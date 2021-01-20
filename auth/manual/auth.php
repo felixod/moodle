@@ -399,7 +399,7 @@ class auth_plugin_manual extends auth_plugin_base {
             return null;
         }
         //Заполним массив передаваемых параметров 
-        $params["studid"] = $id1c;
+        $params["id"] = $id1c;
         $params["status"] = false; // Выводить список всех групп
         //Выполняем операцию
         //$result = $client->GetAllGroupByStudID($params); //GetAllGroupByStudID - это метод веб-сервиса 1С, который описан в конфигурации.
