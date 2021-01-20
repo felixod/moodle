@@ -29,6 +29,19 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$string['parentlanguage'] = 'he';
-$string['thisdirection'] = 'rtl';
-$string['thislanguage'] = 'עברית';
+$string['cannotcreatedboninstall'] = '<p>Kon nie die databasis skep nie.</p>
+<p>Die gespesifiseerde databasis bestaan nie en die aangetoonde gebruiker het nie toestemming om die databasis te skep nie.</p>
+<p>Die werf se administrateur moet die konfigurasie van databasisse verifieer.</p>';
+$string['cannotcreatelangdir'] = 'Kan nie taalgids skep nie';
+$string['cannotcreatetempdir'] = 'Kan nie tydelike gids skep nie';
+$string['cannotdownloadcomponents'] = 'Kan nie komponente aflaai nie';
+$string['cannotdownloadzipfile'] = 'Kan nie ZIP-lêer aflaai nie';
+$string['cannotfindcomponent'] = 'Kan nie komponent vind nie';
+$string['cannotsavemd5file'] = 'Kan nie md5-lêer stoor nie';
+$string['cannotsavezipfile'] = 'Kan nie ZIP-lêer stoor nie';
+$string['cannotunzipfile'] = 'Kan nie lêer uitpak nie';
+$string['componentisuptodate'] = 'Komponent is bygewerk';
+$string['dmlexceptiononinstall'] = '<p>\'n Databasisfout het opgeduik [{$a->errorcode}].<br />{$a->debuginfo}</p>';
+$string['downloadedfilecheckfailed'] = 'Kontrolering van afgelaaide lêer het misluk';
+$string['invalidmd5'] = 'Die kontroleveranderlike was verkeerd - probeer weer';
+$string['missingrequiredfield'] = 'Een of ander verlangde veld ontbreek';
