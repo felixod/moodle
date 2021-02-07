@@ -124,7 +124,7 @@ if (has_capability('quizaccess/proctoring:deletecamshots', $context, $USER->id)
             'cmid' => $cmid
         )
     );
-    redirect($url2, 'Images deleted!', -11);
+    redirect($url2, 'Изображения удалены!', -11);
 }
 
 if (has_capability('quizaccess/proctoring:viewreport', $context, $USER->id) && $cmid != null && $courseid != null) {
