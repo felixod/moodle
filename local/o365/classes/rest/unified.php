@@ -26,7 +26,7 @@ namespace local_o365\rest;
 require_once($CFG->dirroot.'/local/o365/lib.php');
 
 /**
- * Client for unified Office 365 API.
+ * Client for unified Microsoft 365 API.
  */
 class unified extends \local_o365\rest\o365api {
     /** The general API area of the class. */
@@ -266,6 +266,7 @@ class unified extends \local_o365\rest\o365api {
      * @param string $name The name of the group.
      * @param string $mailnickname The mailnickname.
      * @param array $extra Extra options for creation, ie description for Description of the group.
+     *
      * @return array Array of returned o365 group data.
      */
     public function create_group($name, $mailnickname = null, $extra = null) {
@@ -281,7 +282,7 @@ class unified extends \local_o365\rest\o365api {
 
         if (empty($mailnickname)) {
             // Cannot generate a good mailnickname because there's nothing but non-alphanum chars to work with. So generate one.
-            $mailnickname = 'group'.uniqid();
+            $mailnickname = 'group' . uniqid();
         }
 
         $groupdata = [
@@ -380,13 +381,32 @@ class unified extends \local_o365\rest\o365api {
         $url = preg_replace("/-my.sharepoint.com/", ".sharepoint.com", $config->odburl);
         $o365urls = [
             // First time visiting the onedrive or notebook urls will result in a please wait while we provision onedrive message.
-            'onedrive' => 'https://'.$url.'/_layouts/groupstatus.aspx?id='.$objectid.'&target=documents',
-            'notebook' => 'https://'.$url.'/_layouts/groupstatus.aspx?id='.$objectid.'&target=notebook',
-            'conversations' => 'https://outlook.office.com/owa/?path=/group/'.$group['mail'].'/mail',
-            'calendar' => 'https://outlook.office365.com/owa/?path=/group/'.$group['mail'].'/calendar',
-            'team' => 'https://teams.microsoft.com',
+            'onedrive' => 'https://' . $url . '/_layouts/groupstatus.aspx?id=' . $objectid . '&target=documents',
+            'notebook' => 'https://' . $url . '/_layouts/groupstatus.aspx?id=' . $objectid . '&target=notebook',
+            'conversations' => 'https://outlook.office.com/owa/?path=/group/' . $group['mail'] . '/mail',
+            'calendar' => 'https://outlook.office365.com/owa/?path=/group/' . $group['mail'] . '/calendar',
+            'team' => $this->get_teams_url($objectid),
         ];
         return $o365urls;
+    }
+
+    /**
+     * Return the URL to the team for the group/Team with the given ID.
+     *
+     * @param $objectid
+     *
+     * @return mixed|string
+     */
+    public function get_teams_url($objectid) {
+        $response = $this->apicall('get', '/teams/' . $objectid);
+        $response = $this->process_apicall_response($response);
+        if (array_key_exists('webUrl', $response) && $response['webUrl']) {
+            $teamsurl = $response['webUrl'];
+        } else {
+            $teamsurl = 'https://teams.microsoft.com';
+        }
+
+        return $teamsurl;
     }
 
     /**
@@ -493,6 +513,20 @@ class unified extends \local_o365\rest\o365api {
      */
     public function get_group_members($groupobjectid) {
         $endpoint = '/groups/'.$groupobjectid.'/members';
+        $response = $this->apicall('get', $endpoint);
+        $expectedparams = ['value' => null];
+        return $this->process_apicall_response($response, $expectedparams);
+    }
+
+    /**
+     * Get a list of group owners.
+     *
+     * @param $groupobjectid The object ID of the group.
+     *
+     * @return array|null
+     */
+    public function get_group_owners($groupobjectid) {
+        $endpoint = '/groups/' . $groupobjectid . '/owners';
         $response = $this->apicall('get', $endpoint);
         $expectedparams = ['value' => null];
         return $this->process_apicall_response($response, $expectedparams);
@@ -660,6 +694,7 @@ class unified extends \local_o365\rest\o365api {
             'preferredName',
             'manager',
             'teams',
+            'roles',
             'groups',
         ];
     }
@@ -758,6 +793,11 @@ class unified extends \local_o365\rest\o365api {
         return [$users, $skiptoken, $deltatoken];
     }
 
+    /**
+     * Get user manager by passing user AD id
+     * @param $userobjectid - user AD id
+     * @return array|null
+     */
     public function get_user_manager($userobjectid) {
         $endpoint = "users/$userobjectid/manager";
         $response = $this->apicall('get', $endpoint);
@@ -770,6 +810,11 @@ class unified extends \local_o365\rest\o365api {
         return $result;
     }
 
+    /**
+     * Get user groups by passing user AD id
+     * @param $userobjectid - user AD id
+     * @return array|null
+     */
     public function get_user_groups($userobjectid) {
         $endpoint = "users/$userobjectid/memberOf";
         $response = $this->apicall('get', $endpoint);
@@ -777,9 +822,49 @@ class unified extends \local_o365\rest\o365api {
         return $result['value'];
     }
 
+    /**
+     * Get user teams by passing user AD id
+     * @param $userobjectid - user AD id
+     * @return array|null
+     */
     public function get_user_teams($userobjectid) {
         $endpoint = "users/$userobjectid/joinedTeams";
         $response = $this->apicall('get', $endpoint);
+        $result = $this->process_apicall_response($response, ['value' => null]);
+        return $result['value'];
+    }
+
+    /**
+     * Get user objects by passing user AD id
+     * @param $userobjectid - user AD id
+     * @param $securityEnabledOnly - return only secure groups
+     * @return array|null
+     */
+    public function get_user_objects($userobjectid, $securityEnabledOnly = true) {
+        $endpoint = "users/$userobjectid/getMemberObjects";
+        $data = [
+            'securityEnabledOnly' => $securityEnabledOnly
+        ];
+        $response = $this->apicall('post', $endpoint, json_encode($data));
+        $result = $this->process_apicall_response($response, ['value' => null]);
+        return $result['value'];
+    }
+
+    /**
+     * Get directory objects by passing objects ids
+     * @param $ids - objects ids which data should be returned
+     * @param $types - collection of resource types that specifies the set of resource collections to search (optional).
+     * @return array|null
+     */
+    public function get_directory_objects($ids, $types = null) {
+        $endpoint = "directoryObjects/getByIds";
+        $data = [
+            'ids' => $ids
+        ];
+        if (!empty($types)) {
+            $data['types'] = $types;
+        }
+        $response = $this->apicall('post', $endpoint, json_encode($data));
         $result = $this->process_apicall_response($response, ['value' => null]);
         return $result['value'];
     }
@@ -1984,7 +2069,7 @@ class unified extends \local_o365\rest\o365api {
      * @param $groupobjectid
      * @param $appid
      *
-     * @return array|string|null
+     * @return bool
      * @throws \moodle_exception
      */
     public function provision_app($groupobjectid, $appid) {
@@ -1992,9 +2077,13 @@ class unified extends \local_o365\rest\o365api {
         $data = [
             'teamsApp@odata.bind' => $this->get_apiuri() . '/beta/appCatalogs/teamsApps/' . $appid,
         ];
-        $response = $this->betaapicall('post', $endpoint, json_encode($data));
+        $this->betaapicall('post', $endpoint, json_encode($data));
 
-        return $response;
+        if ($this->httpclient->info['http_code'] == 201) {
+            return true;
+        } else {
+            throw new \moodle_exception('errorprovisioningapp', 'local_o365');
+        }
     }
 
     /**
@@ -2016,7 +2105,6 @@ class unified extends \local_o365\rest\o365api {
             $moodleapp = array_shift($response['value']);
             $moodleappid = $moodleapp['id'];
         }
-
 
         return $moodleappid;
     }
@@ -2100,7 +2188,7 @@ class unified extends \local_o365\rest\o365api {
      *
      * @param string $displayname
      * @param string $description
-     * @param array $ownerids
+     * @param int $ownerid
      * @param null $extra
      *
      * @return array|null
