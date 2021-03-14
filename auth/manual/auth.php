@@ -99,7 +99,7 @@ class auth_plugin_manual extends auth_plugin_base {
                         $updateuser = new stdClass();
                         $updateuser->id         = $user->id;
                         //Получаем адрес электронной почты из базы
-                        $mail = $this->get_email_from_$id1c ($id1c);
+                        $mail = $this->get_email_from_id1c($id1c);
                         if (!empty($mail)) {
                             $updateuser->email  = $mail;
                         }
@@ -273,7 +273,7 @@ class auth_plugin_manual extends auth_plugin_base {
     * @param  string  $id1c код 1С: Университет
     * @return string  Возвращает адрес электронной почты
     */
-    function get_email_from_$id1c ($id1c) {
+    function get_email_from_id1c ($id1c) {
         //Подключаемся к веб-сервисам 1С: Университет
         $client = self::soap_1c_connector ();
         // Если не удалость подключиться к веб-сервису - откючиться!
