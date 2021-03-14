@@ -98,9 +98,14 @@ class auth_plugin_manual extends auth_plugin_base {
                     if ($user) {
                         $updateuser = new stdClass();
                         $updateuser->id         = $user->id;
-                        //$updateuser->email      = strtolower($username.'@stud.samgups.ru');
                         //Получаем адрес электронной почты из базы
-                        $updateuser->email      = $this->get_email_from_login($username);
+                        $mail = $this->get_email_from_$id1c ($id1c);
+                        if (!empty($mail)) {
+                            $updateuser->email  = $mail;
+                        }
+                        else {
+                            $updateuser->email  = strtolower($username.'@stud.samgups.ru');
+                        }
                         $updateuser->idnumber   = $id1c;
                         $updateuser->confirmed  = 1;
                         $updateuser->country    = 'RU';
@@ -265,10 +270,10 @@ class auth_plugin_manual extends auth_plugin_base {
     /**
     * Функция получает по логину адрес электронной почты
     *
-    * @param  string  $username Имя пользователя
+    * @param  string  $id1c код 1С: Университет
     * @return string  Возвращает адрес электронной почты
     */
-    function get_email_from_login ($username) {
+    function get_email_from_$id1c ($id1c) {
         //Подключаемся к веб-сервисам 1С: Университет
         $client = self::soap_1c_connector ();
         // Если не удалость подключиться к веб-сервису - откючиться!
@@ -276,9 +281,9 @@ class auth_plugin_manual extends auth_plugin_base {
             return false;
         }
         //Заполним массив передаваемых параметров
-        $params["Login"] = $username;
+        $params["id"] = $id1c;
         //Выполняем операцию
-        $result = $client->GetMailIDFromLogin($params); //GetMailIDFromLogin - это метод веб-сервиса 1С, который описан в конфигурации.
+        $result = $client->GetMailFromID($params); //GetMailFromID - это метод веб-сервиса 1С, который описан в конфигурации.
         //Обработаем возвращаемый результат
         $jsResult = $result->return;
         return $jsResult;
