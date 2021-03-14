@@ -98,7 +98,9 @@ class auth_plugin_manual extends auth_plugin_base {
                     if ($user) {
                         $updateuser = new stdClass();
                         $updateuser->id         = $user->id;
-                        $updateuser->email      = strtolower($username.'@stud.samgups.ru');
+                        //$updateuser->email      = strtolower($username.'@stud.samgups.ru');
+                        //Получаем адрес электронной почты из базы
+                        $updateuser->email      = $this->get_email_from_login($username);
                         $updateuser->idnumber   = $id1c;
                         $updateuser->confirmed  = 1;
                         $updateuser->country    = 'RU';
@@ -109,9 +111,10 @@ class auth_plugin_manual extends auth_plugin_base {
                         $this->get_1c_personalinfo($updateuser->idnumber, $username);
                         $this->get_1c_cohort($updateuser->idnumber, $username);
                         // Запрашиваем смену пароля при следующем входе
-                        if ($this->is_internal()) {
-                            set_user_preference('auth_forcepasswordchange', 1, $user->id);
-                        }
+                        // Для ПРЕДУНИВЕРСАРИУМА ОТКЛЮЧАЕМ ОБНОВЛЕНИЕ ПАРОЛЯ (Можно входить из ЭИОС СамГУПС)
+                        //if ($this->is_internal()) {
+                        //    set_user_preference('auth_forcepasswordchange', 1, $user->id);
+                        //}
                     }
                     return true;
                 }
@@ -135,7 +138,7 @@ class auth_plugin_manual extends auth_plugin_base {
         $user = $DB->get_record('user', array('username'=>$username, 'mnethostid'=>$CFG->mnet_localhost_id));
         $id1c = $user->idnumber;
         if (!empty($id1c)) {
-            // Обновляем информацию каждые 2 часа
+            // Обновляем информацию каждую минуту
             if ($this->get_lastlogin_day($user)) {
                 $this->get_1c_personalinfo($id1c, $username);
                 $this->get_1c_cohort($id1c, $username);
@@ -259,6 +262,28 @@ class auth_plugin_manual extends auth_plugin_base {
         return (bool)$dataResult;
     }
 
+    /**
+    * Функция получает по логину адрес электронной почты
+    *
+    * @param  string  $username Имя пользователя
+    * @return string  Возвращает адрес электронной почты
+    */
+    function get_email_from_login ($username) {
+        //Подключаемся к веб-сервисам 1С: Университет
+        $client = self::soap_1c_connector ();
+        // Если не удалость подключиться к веб-сервису - откючиться!
+        if (is_null($client)) {
+            return false;
+        }
+        //Заполним массив передаваемых параметров
+        $params["Login"] = $username;
+        //Выполняем операцию
+        $result = $client->GetMailIDFromLogin($params); //GetMailIDFromLogin - это метод веб-сервиса 1С, который описан в конфигурации.
+        //Обработаем возвращаемый результат
+        $jsResult = $result->return;
+        return $jsResult;
+    }
+    
     /**
     * Функция получает по имени пользователя код 1С: Университет
     *
