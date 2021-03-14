@@ -117,9 +117,9 @@ class auth_plugin_manual extends auth_plugin_base {
                         $this->get_1c_cohort($updateuser->idnumber, $username);
                         // Запрашиваем смену пароля при следующем входе
                         // Для ПРЕДУНИВЕРСАРИУМА ОТКЛЮЧАЕМ ОБНОВЛЕНИЕ ПАРОЛЯ (Можно входить из ЭИОС СамГУПС)
-                        //if ($this->is_internal()) {
+                        if ($this->is_internal()) {
                         //    set_user_preference('auth_forcepasswordchange', 1, $user->id);
-                        //}
+                        }
                     }
                     return true;
                 }
