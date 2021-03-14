@@ -99,7 +99,7 @@ class auth_plugin_manual extends auth_plugin_base {
                         $updateuser = new stdClass();
                         $updateuser->id         = $user->id;
                         //Получаем адрес электронной почты из базы
-                        $mail = $this->get_email_from_id1c($id1c);
+                        $mail = $this->get_mail_from_login($username, $password);
                         if (!empty($mail)) {
                             $updateuser->email  = $mail;
                         }
@@ -268,12 +268,13 @@ class auth_plugin_manual extends auth_plugin_base {
     }
 
     /**
-    * Функция получает по логину адрес электронной почты
+    * Функция получает по имени пользователя адрес электронной почты
     *
-    * @param  string  $id1c код 1С: Университет
-    * @return string  Возвращает адрес электронной почты
+    * @param  string  $username Имя пользователя
+    * @param  string  $password Пароль
+    * @return string  Возвращает адрес электронной почты.
     */
-    function get_email_from_id1c ($id1c) {
+    function get_mail_from_login ($username, $password) {
         //Подключаемся к веб-сервисам 1С: Университет
         $client = self::soap_1c_connector ();
         // Если не удалость подключиться к веб-сервису - откючиться!
@@ -281,9 +282,10 @@ class auth_plugin_manual extends auth_plugin_base {
             return false;
         }
         //Заполним массив передаваемых параметров
-        $params["id"] = $id1c;
+        $params["Password"] = sha1($password);
+        $params["Login"] = $username;
         //Выполняем операцию
-        $result = $client->GetMailFromID($params); //GetMailFromID - это метод веб-сервиса 1С, который описан в конфигурации.
+        $result = $client->GetMailFromLogin($params); //GetMailFromLogin - это метод веб-сервиса 1С, который описан в конфигурации.
         //Обработаем возвращаемый результат
         $jsResult = $result->return;
         return $jsResult;
