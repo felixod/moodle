@@ -59,7 +59,7 @@ class unified extends \local_o365\rest\o365api {
      *
      * @return string The resource for oauth2 tokens.
      */
-    public static function get_resource() {
+    public static function get_tokenresource() {
         $oidcresource = get_config('auth_oidc', 'oidcresource');
         if (!empty($oidcresource)) {
             return $oidcresource;
@@ -196,14 +196,14 @@ class unified extends \local_o365\rest\o365api {
     /**
      * Validate that a given url is a valid OneDrive for Business SharePoint URL.
      *
-     * @param string $resource Uncleaned, unvalidated URL to check.
+     * @param string $tokenresource Uncleaned, unvalidated URL to check.
      * @param \local_o365\oauth2\clientdata $clientdata oAuth2 Credentials
-     * @param \local_o365\httpclientinterface $httpclient An HttpClient to use for transport.
+     *
      * @return bool Whether the received resource is valid or not.
      */
-    public function validate_resource($resource, $clientdata) {
-        $cleanresource = clean_param($resource, PARAM_URL);
-        if ($cleanresource !== $resource) {
+    public function validate_resource($tokenresource, $clientdata) {
+        $cleanresource = clean_param($tokenresource, PARAM_URL);
+        if ($cleanresource !== $tokenresource) {
             return false;
         }
         $fullcleanresource = 'https://'.$cleanresource;
@@ -292,6 +292,7 @@ class unified extends \local_o365\rest\o365api {
             'securityEnabled' => false,
             'mailNickname' => $mailnickname,
             'visibility' => 'Private',
+            'resourceBehaviorOptions' => ['HideGroupInOutlook', 'WelcomeEmailDisabled'],
         ];
 
         if (!empty($extra) && is_array($extra)) {
@@ -385,8 +386,15 @@ class unified extends \local_o365\rest\o365api {
             'notebook' => 'https://' . $url . '/_layouts/groupstatus.aspx?id=' . $objectid . '&target=notebook',
             'conversations' => 'https://outlook.office.com/owa/?path=/group/' . $group['mail'] . '/mail',
             'calendar' => 'https://outlook.office365.com/owa/?path=/group/' . $group['mail'] . '/calendar',
-            'team' => $this->get_teams_url($objectid),
         ];
+        try {
+            $teamurl = $this->get_teams_url($objectid);
+            if ($teamurl) {
+                $o365urls['team'] = $teamurl;
+            }
+        } catch (\Exception $e) {
+            // Do nothing.
+        }
         return $o365urls;
     }
 
@@ -509,10 +517,24 @@ class unified extends \local_o365\rest\o365api {
      * Get a list of group members.
      *
      * @param string $groupobjectid The object ID of the group.
+     * @param string $skiptoken
+     *
      * @return array Array of returned members.
      */
-    public function get_group_members($groupobjectid) {
-        $endpoint = '/groups/'.$groupobjectid.'/members';
+    public function get_group_members($groupobjectid, $skiptoken = '') {
+        $endpoint = '/groups/' . $groupobjectid . '/members';
+        $odataqueries = [];
+
+        if (empty($skiptoken) || !is_string($skiptoken)) {
+            $skiptoken = '';
+        }
+        if (!empty($skiptoken)) {
+            $odataqueries[] = '$skiptoken=' . $skiptoken;
+        }
+        if (!empty($odataqueries)) {
+            $endpoint .= '?' . implode('&', $odataqueries);
+        }
+
         $response = $this->apicall('get', $endpoint);
         $expectedparams = ['value' => null];
         return $this->process_apicall_response($response, $expectedparams);
@@ -747,7 +769,7 @@ class unified extends \local_o365\rest\o365api {
             $params = $this->get_default_user_fields();
         }
         if (is_array($params)) {
-            $excludedfields = ['preferredName', 'teams', 'groups'];
+            $excludedfields = ['preferredName', 'teams', 'groups', 'roles'];
             foreach ($excludedfields as $excludedfield) {
                 if (($key = array_search($excludedfield, $params)) !== false) {
                     unset($params[$key]);
@@ -1383,9 +1405,9 @@ class unified extends \local_o365\rest\o365api {
         $appinfo = $this->get_application_info();
         $appinfo = $appinfo['value'][0];
         $graphresource = null;
-        foreach ($appinfo['requiredResourceAccess'] as $resource) {
-            if ($resource['resourceAppId'] === $graphappid) {
-                $graphresource = $resource;
+        foreach ($appinfo['requiredResourceAccess'] as $requiredresource) {
+            if ($requiredresource['resourceAppId'] === $graphappid) {
+                $graphresource = $requiredresource;
                 break;
             }
         }
@@ -1395,10 +1417,10 @@ class unified extends \local_o365\rest\o365api {
 
         // Translate to permission information.
         $currentperms = [];
-        foreach ($graphresource['resourceAccess'] as $resource) {
-            if ($resource['type'] === 'Role') {
-                if (isset($graphperms[$resource['id']])) {
-                    $perminfo = $graphperms[$resource['id']];
+        foreach ($graphresource['resourceAccess'] as $requiredresource) {
+            if ($requiredresource['type'] === 'Role') {
+                if (isset($graphperms[$requiredresource['id']])) {
+                    $perminfo = $graphperms[$requiredresource['id']];
                     $currentperms[$perminfo['value']] = $perminfo;
                 }
             }
@@ -2091,7 +2113,7 @@ class unified extends \local_o365\rest\o365api {
      *
      * @param $externalappid
      *
-     * @return |null
+     * @return string|null
      * @throws \moodle_exception
      */
     public function get_catalog_app_id($externalappid) {
@@ -2114,7 +2136,7 @@ class unified extends \local_o365\rest\o365api {
      *
      * @param $groupobjectid
      *
-     * @return |null
+     * @return string|null
      * @throws \moodle_exception
      */
     public function get_general_channel_id($groupobjectid) {
@@ -2140,9 +2162,8 @@ class unified extends \local_o365\rest\o365api {
      * @param $appid
      * @param $moodlecourseid
      *
-     * @return array|string|null
+     * @return string
      * @throws \coding_exception
-     * @throws \moodle_exception
      */
     public function add_moodle_tab_to_channel($groupobjectid, $channelid, $appid, $moodlecourseid) {
         global $CFG;
@@ -2164,9 +2185,8 @@ class unified extends \local_o365\rest\o365api {
      * @param $appid
      * @param $tabconfiguration
      *
-     * @return array|string|null
+     * @return string
      * @throws \coding_exception
-     * @throws \moodle_exception
      */
     public function add_tab_to_channel($groupobjectid, $channelid, $appid, $tabconfiguration) {
         $endpoint = '/teams/' . $groupobjectid . '/channels/' . $channelid . '/tabs';
@@ -2176,11 +2196,7 @@ class unified extends \local_o365\rest\o365api {
             'configuration' => $tabconfiguration,
         ];
 
-        $response = $this->betaapicall('post', $endpoint, json_encode($requestparams));
-        $expectedresponse = ['id' => null];
-        $response = $this->process_apicall_response($response, $expectedresponse);
-
-        return $response;
+        return $this->betaapicall('post', $endpoint, json_encode($requestparams));
     }
 
     /**
@@ -2196,7 +2212,7 @@ class unified extends \local_o365\rest\o365api {
      */
     public function create_class_team($displayname, $description, $ownerid, $extra = null) {
         $owneridparam = ["https://graph.microsoft.com/beta/users/{$ownerid}"];
-        $description = substr($description,0,1024); // API restricts length to 1024 chars
+        $description = substr($description, 0, 1024); // API restricts length to 1024 chars.
         $teamdata = [
             'template@odata.bind' => "https://graph.microsoft.com/beta/teamsTemplates('educationClass')",
             'displayName' => $displayname,
@@ -2218,6 +2234,37 @@ class unified extends \local_o365\rest\o365api {
     }
 
     /**
+     * Update the name of a Team.
+     *
+     * @param $objectid
+     * @param $displayname
+     *
+     * @return string
+     */
+    public function update_team_name($objectid, $displayname) {
+        $endpoint = '/teams/' . $objectid;
+
+        $teamdata = [
+            'displayName' => $displayname,
+        ];
+
+        return $this->betaapicall('patch', $endpoint, json_encode($teamdata));
+    }
+
+    /**
+     * Archive a Team.
+     *
+     * @param $objectid
+     *
+     * @return string
+     */
+    public function archive_team($objectid) {
+        $endpoint = '/teams/' . $objectid . '/archive';
+        
+        return $this->betaapicall('post', $endpoint);
+    }
+
+    /**
      * Get user timezone in Outlook settings.
      *
      * @param $upn
@@ -2233,5 +2280,30 @@ class unified extends \local_o365\rest\o365api {
         } catch (\Exception $e) {
             return false;
         }
+    }
+
+    /**
+     * Get a list of teams.
+     *
+     * @param string $skiptoken
+     *
+     * @return array|null
+     */
+    public function get_teams($skiptoken = '') {
+        $endpoint = '/groups?$filter=resourceProvisioningOptions/Any(x:x%20eq%20\'Team\')';
+        $odataqueries = [];
+        if (empty($skiptoken) || !is_string($skiptoken)) {
+            $skiptoken = '';
+        }
+        if (!empty($skiptoken)) {
+            $odataqueries[] = '$skiptoken=' . $skiptoken;
+        }
+        if (!empty($odataqueries)) {
+            $endpoint .= '&' . implode('&', $odataqueries);
+        }
+        $response = $this->betaapicall('get', $endpoint);
+        $expectedparams = ['value' => null];
+
+        return $this->process_apicall_response($response, $expectedparams);
     }
 }

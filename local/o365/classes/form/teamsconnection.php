@@ -15,16 +15,33 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * @package auth_oidc
- * @author James McQuillan <james.mcquillan@remote-learner.net>
+ * @package local_o365
+ * @author Lai Wei <lai.wei@enovation.ie>
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @copyright (C) 2014 onwards Microsoft, Inc. (http://microsoft.com/)
  */
 
+namespace local_o365\form;
+
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2020071504;
-$plugin->requires = 2020061500;
-$plugin->release = '3.9.4';
-$plugin->component = 'auth_oidc';
-$plugin->maturity = MATURITY_STABLE;
+require_once($CFG->dirroot.'/lib/formslib.php');
+
+/**
+ * Single Teams connection form.
+ *
+ * @package local_o365\form
+ */
+class teamsconnection extends \moodleform {
+    /**
+     * Form definition.
+     */
+    protected function definition() {
+        $mform = &$this->_form;
+
+        $mform->addElement('select', 'team', get_string('acp_teamconnections_form_team', 'local_o365'),
+            $this->_customdata['teamsoptions']);
+
+        $this->add_action_buttons();
+    }
+}

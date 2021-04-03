@@ -15,16 +15,23 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * @package auth_oidc
- * @author James McQuillan <james.mcquillan@remote-learner.net>
+ * This page creates JSON for deployment.
+ *
+ * @package local_o365
+ * @author Andrius Vegys <andrius.vegys@enovation.ie>
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @copyright (C) 2014 onwards Microsoft, Inc. (http://microsoft.com/)
+ * @copyright (C) 2018 onwards Microsoft, Inc. (http://microsoft.com/)
  */
 
-defined('MOODLE_INTERNAL') || die();
+require_once(__DIR__ . '/../../config.php');
+require_once($CFG->dirroot . '/local/o365/lib.php');
 
-$plugin->version = 2020071504;
-$plugin->requires = 2020061500;
-$plugin->release = '3.9.4';
-$plugin->component = 'auth_oidc';
-$plugin->maturity = MATURITY_STABLE;
+require_admin();
+require_sesskey();
+
+$json = local_o365_create_deploy_json();
+
+header('Content-disposition: attachment; filename=jsondeploy.json');
+header('Content-type: application/json');
+
+echo( $json);
