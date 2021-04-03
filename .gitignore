@@ -44,6 +44,4 @@ composer.phar
 /lib/yuilib/*/*/*-coverage.js
 atlassian-ide-plugin.xml
 /node_modules/
-.nova/Publishing/PriemLMS.json
-.nova/Configuration.json
-.nova/Artwork
+moodle-plugin-ci.phar
