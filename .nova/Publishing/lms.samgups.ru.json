@@ -1,0 +1,8 @@
+{
+  "identifier" : "EAE392DC-A26C-4B11-9BEC-F7D42461ACC9",
+  "localPath" : ".",
+  "remotePath" : "\/var\/www\/moodle",
+  "remoteURL" : "https:\/\/lms.samgups.ru",
+  "server" : "lms.samgups.ru",
+  "usesPublishing" : true
+}
