@@ -3680,7 +3680,7 @@
         <xsl:variable name="after" select="count($meInContext/following-sibling::*[descendant-or-self::*[name()='w:tc' and (count(ancestor::w:tbl)=$tblCount)]])" />
 
         <xsl:if test="not($vmerge and not($vmerge/@w:val))">
-            <xsl:value-of select="$debug_newline"/>
+            <!-- <xsl:value-of select="$debug_newline"/> -->
             <xsl:element name="{$table_celltype}">
 
         <xsl:if test="$sTblStyleName/@w:styleId != ''">
@@ -4786,7 +4786,7 @@
             </xsl:when>
             <xsl:when test="$img_rid != '' and $imagehandling = 'referenced'">
                 <!-- Use the image file name in the @src attribute -->
-                <xsl:value-of select="substring-after($img_filename, '/')"/>
+                <xsl:value-of select="substring-after($img_filename, 'media/')"/>
             </xsl:when>
             <xsl:when test="$img_rid != ''">
                 <!-- Dereference the reference ID field to get the file name, and map to the src attribute -->
