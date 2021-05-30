@@ -23,8 +23,6 @@
 
 namespace local_o365\feature\calsync;
 
-require_once($CFG->dirroot.'/local/o365/lib.php');
-
 class main {
     protected $clientdata = null;
     protected $httpclient = null;
@@ -43,14 +41,14 @@ class main {
     public function construct_calendar_api($muserid, $systemfallback = true) {
         $unifiedconfigured = \local_o365\rest\unified::is_configured();
         if ($unifiedconfigured === true) {
-            $resource = \local_o365\rest\unified::get_resource();
+            $tokenresource = \local_o365\rest\unified::get_tokenresource();
         } else {
-            $resource = \local_o365\rest\calendar::get_resource();
+            $tokenresource = \local_o365\rest\calendar::get_tokenresource();
         }
 
-        $token = \local_o365\oauth2\token::instance($muserid, $resource, $this->clientdata, $this->httpclient);
+        $token = \local_o365\oauth2\token::instance($muserid, $tokenresource, $this->clientdata, $this->httpclient);
         if (empty($token) && $systemfallback === true) {
-            $token = \local_o365\utils::get_app_or_system_token($resource, $this->clientdata, $this->httpclient);
+            $token = \local_o365\utils::get_app_or_system_token($tokenresource, $this->clientdata, $this->httpclient);
         }
         if (empty($token)) {
             throw new \Exception('No token available for user #'.$muserid);
@@ -71,10 +69,10 @@ class main {
      * @return \local_o365\oauth2\token|null Either a token for calendar syncing, or null if no token could be retrieved.
      */
     public function get_user_token($muserid) {
-        $resource = (\local_o365\rest\unified::is_configured() === true)
-            ? \local_o365\rest\unified::get_resource()
-            : \local_o365\rest\calendar::get_resource();
-        $usertoken = \local_o365\oauth2\token::instance($muserid, $resource, $this->clientdata, $this->httpclient);
+        $tokenresource = (\local_o365\rest\unified::is_configured() === true)
+            ? \local_o365\rest\unified::get_tokenresource()
+            : \local_o365\rest\calendar::get_tokenresource();
+        $usertoken = \local_o365\oauth2\token::instance($muserid, $tokenresource, $this->clientdata, $this->httpclient);
         return (!empty($usertoken)) ? $usertoken : null;
     }
 
@@ -438,7 +436,7 @@ class main {
     }
 
     /**
-     * Construct the o3654 group email.
+     * Construct the o365 group email.
      * @return string The o365 group email, or an empty string if an error occurred.
      */
     protected function construct_outlook_group_email($courseid) {
@@ -447,13 +445,12 @@ class main {
         $groupprefix = $DB->get_field('course', 'shortname', ['id' => SITEID]);
         $groupname = $DB->get_field('course', 'shortname', ['id' => $courseid]);
         $tenant = get_config('local_o365', 'aadtenant');
-        $mailnickprefix = '';
         $groupemail = '';
 
         // If the course shortname and the Azure AD tenant are not empty.
         if (!empty($groupprefix) && !empty($tenant)) {
             $mailnickprefix = \core_text::strtolower($groupprefix);
-            $mailnickprefix = translit($mailnickprefix);
+            $mailnickprefix = preg_replace('/[^a-z0-9]+/iu', '', $mailnickprefix);
             $groupemail = $mailnickprefix.'_'.$groupname."@{$tenant}";
         }
 
