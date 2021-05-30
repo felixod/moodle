@@ -99,6 +99,7 @@ const BIGBLUEBUTTON_ORIGIN_INDEX = 2;
  * @param string $configtoken
  * @param string $userid
  * @param string $clienttype
+ * @param string $createtime
  *
  * @return string
  */
@@ -109,7 +110,8 @@ function bigbluebuttonbn_get_join_url(
     $logouturl,
     $configtoken = null,
     $userid = null,
-    $clienttype = BIGBLUEBUTTON_CLIENTTYPE_FLASH
+    $clienttype = BIGBLUEBUTTON_CLIENTTYPE_FLASH,
+    $createtime = null
 ) {
     $data = ['meetingID' => $meetingid,
         'fullName' => $username,
@@ -125,6 +127,9 @@ function bigbluebuttonbn_get_join_url(
     }
     if (!is_null($userid)) {
         $data['userID'] = $userid;
+    }
+    if (!is_null($createtime)) {
+        $data['createTime'] = $createtime;
     }
     return \mod_bigbluebuttonbn\locallib\bigbluebutton::action_url('join', $data);
 }
@@ -2104,8 +2109,8 @@ function bigbluebuttonbn_send_notification_recording_ready($bigbluebuttonbn) {
  * @return void
  */
 function bigbluebuttonbn_process_meeting_events($bigbluebuttonbn, $jsonobj) {
-    $meetingid = $jsonobj->{'ext_meeting_id'};
-    $recordid = $jsonobj->{'meeting_id'};
+    $meetingid = $jsonobj->{'meeting_id'};
+    $recordid = $jsonobj->{'internal_meeting_id'};
     $attendees = $jsonobj->{'data'}->{'attendees'};
     foreach ($attendees as $attendee) {
         $userid = $attendee->{'ext_user_id'};
@@ -3257,6 +3262,21 @@ function bigbluebuttonbn_settings_lockonjoinconfigurable(&$renderer) {
             $renderer->render_group_element_checkbox('lockonjoinconfigurable_editable', 1)
         );
     }
+}
+
+/**
+ * Helper function renders default messages settings.
+ *
+ * @param object $renderer
+ *
+ * @return void
+ */
+function bigbluebuttonbn_settings_default_messages(&$renderer) {
+    $renderer->render_group_header('default_messages');
+    $renderer->render_group_element(
+        'welcome_default',
+        $renderer->render_group_element_textarea('welcome_default', '', PARAM_TEXT)
+    );
 }
 
 /**

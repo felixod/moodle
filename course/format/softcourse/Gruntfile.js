@@ -24,10 +24,12 @@
  * Grunt configuration
  */
 
-module.exports = function(grunt) {
+module.exports = function (grunt) {
     let path = require('path'),
         cwd = process.env.PWD || process.cwd(),
         inAMD = path.basename(cwd) === 'amd';
+
+    const sass = require('node-sass');
 
     // Globbing pattern for matching all AMD JS source files.
     let amdSrc = [inAMD ? cwd + '/src/*.js' : '**/amd/src/*.js'];
@@ -42,13 +44,12 @@ module.exports = function(grunt) {
      * @param {String} srcPath the  matched src path
      * @return {String} The rewritten destination path.
      */
-    let uglifyRename = function(destPath, srcPath) {
+    let uglifyRename = function (destPath, srcPath) {
         destPath = srcPath.replace('src', 'build');
         destPath = destPath.replace('.js', '.min.js');
         destPath = path.resolve(cwd, destPath);
         return destPath;
     };
-
 
     // Project configuration.
     grunt.initConfig({
@@ -61,14 +62,46 @@ module.exports = function(grunt) {
                 }],
                 options: {report: 'none'}
             }
-        }
+        },
+        stylelint: {
+            scss: {
+                options: {
+                    configFile: '',
+                    formatter: 'string',
+                    ignoreDisables: false,
+                    failOnError: true,
+                    outputFile: '',
+                    reportNeedlessDisables: false,
+                    fix: false,
+                    syntax: 'scss'
+                },
+                src: ['scss/*.scss']
+            },
+            less: {
+                src: ['less/*.less']
+            },
+            css: {
+                src: ['css/*.css']
+            }
+        },
+        sass: {
+            // Compile moodle styles.
+            options: {
+                implementation: sass,
+                sourceMap: true
+            },
+            dist: {
+                files: {
+                    'styles.css':'scss/styles.scss'
+                }
+            }
+        },
     });
 
-
-
-
     // Register NPM tasks.
+    grunt.loadNpmTasks("grunt-sass");
     grunt.loadNpmTasks('grunt-contrib-uglify-es');
+    grunt.loadNpmTasks("grunt-stylelint");
 
     // Register JS tasks.
     grunt.registerTask('amd', ['uglify']);
