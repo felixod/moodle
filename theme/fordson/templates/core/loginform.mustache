@@ -94,7 +94,7 @@
 {{#hascustomlogin}}
 <div class="m-y-3 hidden-sm-down"></div>
 
-<div class="row signin">
+<div class="row signin" style="width: 50%; margin: 0 auto; text-align: center;">
     <div class="col-xl-3 push-xl-1 col-md-4">
     <div class="fpsignup">
         <div class="card-title text-xs-center">
@@ -112,7 +112,7 @@
                     <div class="alert alert-danger" role="alert">{{error}}</div>
                 </div>
             {{/error}}
-            <div style="width: 50%; margin: 0 auto; text-align: center;" class="signinform">
+            <div style="text-align: center;" class="signinform">
                         <h3>{{#str}}fpsignup, theme_fordson{{/str}}</h3>
                         <!--<form class="m-t-1" action="{{{ config.wwwroot }}}/login/index.php" method="POST" role="form">
                         <input type="hidden" name="logintoken" value="{{logintoken}}">
