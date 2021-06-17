@@ -2205,7 +2205,7 @@ function bigbluebuttonbn_is_bn_server() {
  * @return array
  */
 function bigbluebuttonbn_import_get_courses_for_select(array $bbbsession) {
-    if ($bbbsession['administrator']) {
+    if ($bbbsession['administrator'] || has_capability('moodle/course:view')) {
         $courses = get_courses('all', 'c.fullname ASC');
         // It includes the name of the site as a course (category 0), so remove the first one.
         unset($courses['1']);
@@ -3275,7 +3275,7 @@ function bigbluebuttonbn_settings_default_messages(&$renderer) {
     $renderer->render_group_header('default_messages');
     $renderer->render_group_element(
         'welcome_default',
-        $renderer->render_group_element_textarea('welcome_default', '', PARAM_TEXT)
+        $renderer->render_group_element_textarea('welcome_default', '', PARAM_RAW)
     );
 }
 
