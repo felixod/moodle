@@ -26,8 +26,8 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: mbstring, pgsql, mysqli, gd, zip
- 
+          extensions: mbstring, mysqli, gd, zip
+
       - name: composer
         run: |
            composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^3
@@ -35,10 +35,9 @@ jobs:
            echo $(cd ci/vendor/bin; pwd) >> $GITHUB_PATH
            sudo locale-gen en_AU.UTF-8
            sudo systemctl start mysql.service
-        working-directory: ci
 
       - name: install Moodle
-        run: moodle-plugin-ci --ansi install --db-user=root --db-pass=root --db-host=127.0.0.1 --plugin this-plugin
+        run: moodle-plugin-ci install -v  --db-user=root --db-pass=root --db-host=127.0.0.1 --plugin this-plugin
         env:
           DB: ${{ matrix.database }}
           MOODLE_BRANCH: ${{ matrix.moodle-branch }}

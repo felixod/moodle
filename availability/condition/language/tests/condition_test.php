@@ -240,7 +240,7 @@ class availability_language_condition_testcase extends advanced_testcase {
      * @coversDefaultClass availability_language\condition
      */
     public function test_backend() {
-        global $DB;
+        global $CFG, $DB;
         $this->resetAfterTest();
         $this->setAdminUser();
         set_config('enableavailability', true);
@@ -260,9 +260,18 @@ class availability_language_condition_testcase extends advanced_testcase {
         $mpage = new moodle_page();
         $mpage->set_url('/course/index.php', ['id' => $course->id]);
         $mpage->set_context($context);
+        $format = course_get_format($course);
         $renderer = $mpage->get_renderer('format_topics');
-        ob_start();
-        echo $renderer->print_multiple_section_page($course, null, null, null, null);
+        $branch = (int)$CFG->branch;
+        if ($branch > 311) {
+            $outputclass = $format->get_output_classname('course_format');
+            $output = new $outputclass($format);
+            ob_start();
+            echo $renderer->render($output);
+        } else {
+            ob_start();
+            echo $renderer->print_multiple_section_page($course, null, null, null, null);
+        }
         $out = ob_get_clean();
         $this->assertStringContainsString('Not available unless: The student\'s language is English ‎(en)', $out);
         // MDL-68333 hack when nl language is not installed.
@@ -270,7 +279,11 @@ class availability_language_condition_testcase extends advanced_testcase {
         $this->setuser($user);
         rebuild_course_cache($course->id, true);
         ob_start();
-        echo $renderer->print_multiple_section_page($course, null, null, null, null);
+        if ($branch > 311) {
+            echo $renderer->render($output);
+        } else {
+            echo $renderer->print_multiple_section_page($course, null, null, null, null);
+        }
         $out = ob_get_clean();
         $this->assertStringNotContainsString('Not available unless: The student\'s language is English ‎(en)', $out);
     }
